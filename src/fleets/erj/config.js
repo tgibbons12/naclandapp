@@ -80,7 +80,11 @@ const BASE_SCHEMA = {
   },
 
   calculate(s) {
-    const speeds = getEMBSpeeds(s.acType, Number(s.flap), s.landingWeight);
+    const flapNum  = Number(s.flap);
+    const isF22    = flapNum === 22;
+    const isWet    = String(s.surface).toLowerCase() === "wet";
+
+    const speeds = getEMBSpeeds(s.acType, flapNum, s.landingWeight);
 
     // Flaps 45: factored dispatch distance (POH §12B) — primary planning value.
     // Flaps 22: unfactored distance from PD-15 (ANAC QRH Rev 8) — crew reference only.
@@ -94,14 +98,14 @@ const BASE_SCHEMA = {
       surface:   s.surface,
     });
 
-    const unfactoredF22Dist = Number(s.flap) === 22
+    const unfactoredF22Dist = isF22
       ? (() => {
           let d = getPD15UnfactoredDistance({
             weightLbs: s.landingWeight,
             elevFt:    s.pressureAlt,
             windKt:    s.headwind,
           });
-          if (s.surface === "wet") d = Math.round(d * 1.20);
+          if (isWet) d = Math.round(d * 1.20);
           return d;
         })()
       : null;
@@ -117,7 +121,7 @@ const BASE_SCHEMA = {
     const structural = EMB_LIMITS[s.acType].structural;
 
     // primaryDist: F45 → factored dispatch; F22 → unfactored PD-15 (clearly labeled in UI)
-    const primaryDist = Number(s.flap) === 22 ? unfactoredF22Dist : factoredDist;
+    const primaryDist = isF22 ? unfactoredF22Dist : factoredDist;
 
     return {
       speeds: {
@@ -132,7 +136,7 @@ const BASE_SCHEMA = {
       structural,
       primaryDist,
       // Flag so the UI can label the distance appropriately
-      primaryDistIsUnfactored: Number(s.flap) === 22,
+      primaryDistIsUnfactored: isF22,
     };
   },
 };
