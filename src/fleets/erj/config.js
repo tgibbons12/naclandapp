@@ -2,6 +2,7 @@ import {
   getEMBSpeeds,
   calcEMBDistanceCorrected,
   getEMBClimbLimitWeight,
+  getPD15UnfactoredDistance,
   EMB_LIMITS,
 } from "./calc.js";
 
@@ -14,7 +15,12 @@ import {
 // MAX_MAN/HI/MED/LO braking-action grid. There is no braking-action selector,
 // no temperature/slope correction, and no reverser-inop correction in this
 // source data — reverse thrust credit is excluded from the basis entirely.
-// Distances are published for Flaps 45 only.
+// Flaps 45 factored dispatch distance: calcEMBDistanceCorrected() (POH §12B).
+//
+// Flaps 22 UNFACTORED distance: sourced from ANAC QRH-145/1167 Rev 8 PD-15
+// (AE3007A1 engines, dry runway, ISA, 0% slope). Wind correction applied
+// analytically from tabular deltas. This is NOT a Part 121 dispatch distance —
+// it is a raw performance figure for crew reference only.
 //
 // As a result this config exposes a single "surface" toggle (Dry/Wet) instead
 // of the 6-position RCAM braking scale used elsewhere in the app, and the
@@ -42,7 +48,7 @@ const BASE_SCHEMA = {
 
   flapOptions: [
     { value: "45", label: "45" },
-    { value: "22", label: "22" }, // speeds only — no Flaps-22 distance chart published
+    { value: "22", label: "22" }, // speeds + unfactored distance (PD-15); factored dispatch basis is F45 only
   ],
 
   // No QRH braking-action scale published for this distance chart — just dry/wet.
@@ -76,8 +82,10 @@ const BASE_SCHEMA = {
   calculate(s) {
     const speeds = getEMBSpeeds(s.acType, Number(s.flap), s.landingWeight);
 
-    // Distance chart is Flaps-45 / no-reverse only; that's the only published
-    // dispatch basis regardless of which flap setting was used for speeds.
+    // Flaps 45: factored dispatch distance (POH §12B) — primary planning value.
+    // Flaps 22: unfactored distance from PD-15 (ANAC QRH Rev 8) — crew reference only.
+    //   Wet correction (+20%) is applied to the unfactored F22 distance for surface parity,
+    //   but this remains an unfactored figure — not a Part 121 dispatch basis.
     const factoredDist = calcEMBDistanceCorrected({
       acType:    s.acType,
       weightLbs: s.landingWeight,
@@ -85,6 +93,18 @@ const BASE_SCHEMA = {
       windKt:    s.headwind,
       surface:   s.surface,
     });
+
+    const unfactoredF22Dist = Number(s.flap) === 22
+      ? (() => {
+          let d = getPD15UnfactoredDistance({
+            weightLbs: s.landingWeight,
+            elevFt:    s.pressureAlt,
+            windKt:    s.headwind,
+          });
+          if (s.surface === "wet") d = Math.round(d * 1.20);
+          return d;
+        })()
+      : null;
 
     const climbLimited = getEMBClimbLimitWeight({
       acType:       s.acType,
@@ -96,6 +116,9 @@ const BASE_SCHEMA = {
 
     const structural = EMB_LIMITS[s.acType].structural;
 
+    // primaryDist: F45 → factored dispatch; F22 → unfactored PD-15 (clearly labeled in UI)
+    const primaryDist = Number(s.flap) === 22 ? unfactoredF22Dist : factoredDist;
+
     return {
       speeds: {
         vref: speeds.VREF,
@@ -104,9 +127,12 @@ const BASE_SCHEMA = {
         vfs:  speeds.VFS,
       },
       factoredDist,
+      unfactoredF22Dist,
       climbLimited,
       structural,
-      primaryDist: factoredDist,
+      primaryDist,
+      // Flag so the UI can label the distance appropriately
+      primaryDistIsUnfactored: Number(s.flap) === 22,
     };
   },
 };

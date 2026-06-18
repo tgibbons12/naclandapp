@@ -525,3 +525,61 @@ export function getEMBClimbLimitWeight({ acType, antiIce, pressureAlt, oatC, ice
 // 5. No Ice-Accretion correction exists for the dispatch distance chart itself —
 //    ice accretion only affects the separate Approach Climb Limit Weight chart
 //    (see climb-limit table below), per POH §12.A.
+
+// ─── PD-15 UNFACTORED LANDING DISTANCE — FLAPS 22, DRY, ISA, SLOPE 0% ────────
+// Source: ANAC QRH-145/1167 Rev 8, PD-15 (AE3007A1 engines)
+// Calm-wind (0 kt) values only; wind correction applied analytically (see below).
+// Published in meters/kg; converted here to feet/lbs.
+//   1 m = 3.28084 ft | 1 kg = 2.20462 lbs
+//
+// Row format: [weight_lbs, distSL, dist1k, dist2k, dist3k, dist4k, dist5k]
+// Weight rows correspond to original 1,000 kg steps (12,000–20,000 kg).
+// Elevation columns: SL(0), 1000, 2000, 3000, 4000, 5000 ft.
+const PD15_CALM = [
+  //  lbs    SL    1k    2k    3k    4k    5k
+  [26455,  2500, 2552, 2608, 2667, 2726, 2789],  // 12000 kg
+  [28660,  2651, 2707, 2766, 2828, 2894, 2963],  // 13000 kg
+  [30865,  2792, 2854, 2917, 2985, 3054, 3127],  // 14000 kg
+  [33069,  2940, 3005, 3074, 3143, 3219, 3297],  // 15000 kg
+  [35274,  3094, 3166, 3238, 3317, 3396, 3478],  // 16000 kg
+  [37479,  3245, 3320, 3399, 3481, 3566, 3655],  // 17000 kg
+  [39683,  3396, 3478, 3560, 3648, 3740, 3835],  // 18000 kg
+  [41888,  3556, 3642, 3730, 3825, 3924, 4025],  // 19000 kg
+  [44092,  3714, 3806, 3901, 3999, 4104, 4213],  // 20000 kg
+];
+
+const PD15_ELEV_COLS = [0, 1000, 2000, 3000, 4000, 5000];
+
+// ─── WIND SENSITIVITY (derived from PD-15 tabular deltas) ────────────────────
+// Mean delta per 10 kt across the full weight/altitude matrix:
+//   Headwind:  −180 ft per 10 kt  (reduces distance)
+//   Tailwind:  +558 ft per 10 kt  (increases distance)
+// Tailwind penalty is ~3× the headwind benefit — consistent with the elevated
+// groundspeed asymmetry observed across every cell in the table.
+const PD15_HW_FT_PER_10KT = 180;  // subtracted for positive (HW) wind
+const PD15_TW_FT_PER_10KT = 558;  // added for negative (TW) wind
+
+// ─── PUBLIC API ───────────────────────────────────────────────────────────────
+// Returns interpolated UNFACTORED landing distance in feet.
+// Basis: Flaps 22, dry runway, ISA conditions, 0% slope (PD-15).
+//
+// weightLbs : actual landing weight in lbs
+// elevFt    : airport elevation in ft MSL
+// windKt    : headwind component in kt
+//             positive = headwind (reduces distance)
+//             negative = tailwind (increases distance)
+//
+// Interpolation: bilinear across weight and altitude using existing
+// bilinearLookup(), then linear wind correction from calm-wind baseline.
+export function getPD15UnfactoredDistance({ weightLbs, elevFt, windKt = 0 }) {
+  const calmDist = bilinearLookup(PD15_CALM, PD15_ELEV_COLS, weightLbs, elevFt);
+
+  let windAdj = 0;
+  if (windKt > 0) {
+    windAdj = -(windKt / 10) * PD15_HW_FT_PER_10KT;  // headwind — negative delta
+  } else if (windKt < 0) {
+    windAdj =  (Math.abs(windKt) / 10) * PD15_TW_FT_PER_10KT;  // tailwind — positive delta
+  }
+
+  return Math.round(calmDist + windAdj);
+}
