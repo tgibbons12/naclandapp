@@ -20,21 +20,18 @@ const RCAM_ROWS = [
 const css = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body, #root { height: 100%; width: 100%; max-width: 100% !important; padding: 0 !important; overflow: hidden; text-align: left; }
-
   body {
     background: #E4E3EA;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
     color: #000;
     -webkit-font-smoothing: antialiased;
   }
-
   .shell {
     height: 100dvh; width: 100%;
     display: flex; flex-direction: column;
     background: #E4E3EA;
     padding: 16px 16px 0;
   }
-
   .card {
     background: #9B9B9B;
     border: 1px solid #888888;
@@ -46,7 +43,6 @@ const css = `
     min-height: 0;
     box-shadow: 0 1px 8px rgba(0,0,0,0.18);
   }
-
   .title-bar {
     background: #E4E3EA;
     display: flex; align-items: center; justify-content: center;
@@ -59,14 +55,12 @@ const css = `
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   }
   .title-settings-btn:active { opacity: 0.5; }
-
   .panels {
     display: grid; grid-template-columns: 1fr 1fr;
     flex: 1; min-height: 0;
     padding: 8px 8px 0; gap: 16px;
   }
   @media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
-
   .panel {
     background: #ffffff;
     padding: 10px 18px 14px;
@@ -74,13 +68,11 @@ const css = `
     border: 1px solid #d0d0d5; border-radius: 10px;
     overflow-y: auto; min-height: 0;
   }
-
   .srow { display: flex; flex-direction: column; align-items: center; padding: 7px 0 6px; gap: 5px; }
   .srow + .srow { border-top: 1px solid #e5e5ea; }
   .lbl { font-size: 13px; font-weight: 400; color: #000; text-align: center; line-height: 1.3; }
   .sublbl { font-size: 11px; color: #8e8e93; text-align: center; margin-top: -2px; }
   .val { font-size: 15px; color: #007aff; text-align: center; }
-
   .seg { display: inline-flex; background: rgba(118,118,128,0.12); border-radius: 9px; padding: 2px; gap: 0; position: relative; }
   .seg-btn {
     position: relative; background: transparent; border: none; border-radius: 7px;
@@ -90,7 +82,6 @@ const css = `
   }
   .seg-btn.active { background: #ffffff; color: #000; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.18), 0 1px 1px rgba(0,0,0,0.06); }
   .seg-btn:not(.active):active { background: rgba(0,0,0,0.05); }
-
   .stepper { display: inline-flex; align-items: stretch; border-radius: 9px; overflow: hidden; border: 1px solid rgba(0,0,0,0.15); background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
   .step-btn {
     background: #fff; border: none; color: #007aff; font-size: 20px; font-weight: 300;
@@ -100,7 +91,6 @@ const css = `
   }
   .step-divider { width: 1px; background: rgba(0,0,0,0.15); flex-shrink: 0; }
   .step-btn:active { background: #E4E3EA; }
-
   .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; padding: 6px 0 4px; width: 100%; }
   .toggle-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .toggle-lbl { font-size: 12px; color: #000; text-align: center; line-height: 1.2; }
@@ -113,7 +103,6 @@ const css = `
   }
   .ios-toggle input:checked ~ .ios-track { background: #578E48; }
   .ios-toggle input:checked ~ .ios-track::before { transform: translateX(18px); }
-
   .rcam-btn { background: none; border: none; color: #007aff; font-size: 13.5px; font-family: inherit; cursor: pointer; padding: 2px 0; text-align: center; }
   .rcam-btn:active { opacity: 0.5; }
   .calc-btn { background: none; border: none; color: #007aff; font-size: 15px; font-family: inherit; cursor: pointer; padding: 4px 6px; white-space: nowrap; flex-shrink: 0; }
@@ -121,7 +110,6 @@ const css = `
   .hw-row { display: flex; align-items: center; gap: 10px; }
   .short-row { display: flex; align-items: center; gap: 10px; justify-content: center; }
   .short-none { font-size: 14px; color: #8e8e93; }
-
   /* ── TAP INPUT ── */
   .tap-val {
     font-size: 15px; color: #007aff; text-align: center;
@@ -137,7 +125,6 @@ const css = `
     font-size: 16px; /* prevents iOS auto-zoom */
     -webkit-appearance: menulist-button;
   }
-
   /* ── FAILURE PICKER ── */
   .failure-select {
     width: 100%; font-size: 13px; font-family: inherit;
@@ -152,7 +139,6 @@ const css = `
     cursor: pointer;
   }
   .failure-select:focus { outline: 2px solid #007aff; outline-offset: 1px; }
-
   /* ── BOTTOM BAR ── */
   .bottom-bar {
     background: #ffffff;
@@ -178,7 +164,6 @@ const css = `
   .dist-num { font-size: clamp(28px, 4.5vw, 40px); font-weight: 400; color: #000; line-height: 1; white-space: nowrap; }
   .dist-lbl { font-size: 11px; color: #8e8e93; text-align: right; margin-top: 2px; }
   .dist-num.nn { color: #c0392b; }
-
   /* ── TAB BAR ── */
   .tab-bar {
     background: transparent;
@@ -191,7 +176,6 @@ const css = `
   .tab-lbl { font-size: 11px; color: #8e8e93; }
   .tab-lbl.on { color: #007aff; }
   .tab-bar-indicator { width: 36px; height: 4px; background: #000; border-radius: 2px; margin: 3px auto 0; }
-
   /* ── MODAL BASE ── */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
   .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
@@ -201,13 +185,11 @@ const css = `
   .modal-close { background: #e5e5ea; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #3c3c43; flex-shrink: 0; font-family: inherit; }
   .modal-body { overflow-y: auto; padding: 0; }
   .modal-footer { padding: 10px 16px; border-top: 1px solid #e5e5ea; font-size: 10px; color: #8e8e93; line-height: 1.5; }
-
   .rcam-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .rcam-table th { background: #E4E3EA; padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #3c3c43; border-bottom: 1px solid #e5e5ea; position: sticky; top: 0; }
   .rcam-table td { padding: 9px 12px; border-bottom: 1px solid #E4E3EA; vertical-align: top; line-height: 1.35; }
   .rcam-table tr:last-child td { border-bottom: none; }
   .rcc-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; font-size: 15px; font-weight: 700; }
-
   .fleet-picker { background: #fff; border-radius: 14px; width: 100%; max-width: 380px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
   .fleet-list { padding: 8px 0; }
   .fleet-item {
@@ -220,7 +202,6 @@ const css = `
   .fleet-item:active { background: #E4E3EA; }
   .fleet-item-label { font-size: 16px; color: #000; }
   .fleet-item-check { color: #007aff; font-size: 18px; }
-
   /* ── MACG MODAL ── */
   .macg-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
   .macg-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -267,13 +248,6 @@ function Stepper({ value, onChange, step = 1, min = -9999, max = 99999 }) {
   );
 }
 
-// TapInput — tapping the label opens the native iOS drum-roll picker.
-// A transparent <select> overlays the visible label. iOS Safari always renders
-// selects as the native scroll-wheel picker.
-// Props:
-//   options — optional [{value, label}] for labeled picks (e.g. braking action)
-//   display — optional override for the visible label text
-//   step/min/max — used to auto-generate numeric options when options not provided
 function TapInput({ value, onChange, step = 1, min = -9999, max = 99999, display, options: optsProp }) {
   const opts = optsProp ?? (() => {
     const arr = [];
@@ -282,17 +256,12 @@ function TapInput({ value, onChange, step = 1, min = -9999, max = 99999, display
       arr.push({ value: max, label: String(max) });
     return arr;
   })();
-
   const visibleLabel = display
     ?? (optsProp ? (optsProp.find(o => o.value === value)?.label ?? String(value)) : String(value));
-
   return (
     <span className="tap-val">
       {visibleLabel}
-      <select
-        value={value}
-        onChange={e => onChange(Number(e.target.value))}
-      >
+      <select value={value} onChange={e => onChange(Number(e.target.value))}>
         {opts.map(o => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
@@ -311,38 +280,24 @@ function Toggle({ checked, onChange }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MACG MODAL  (737 only — requires fleet.macg helper)
+// MACG MODAL  (737 only)
 // ─────────────────────────────────────────────────────────────────────────────
 function MACGModal({ onClose, fleet, s }) {
   const [macgInput, setMacgInput] = useState("200");
-  const [unit, setUnit] = useState("ftNm"); // "ftNm" | "pct"
-
+  const [unit, setUnit] = useState("ftNm");
   const macg = fleet.macg;
   if (!macg) return null;
-
-  // Parse input
   const raw = parseFloat(macgInput);
   const valid = !isNaN(raw) && raw > 0;
-
-  // Convert to ft/NM for calculations
-  const reqFtNm = valid
-    ? (unit === "pct" ? macg.pctToFtNm(raw) : Math.round(raw))
-    : null;
-
-  // Forward: actual gradient at current landing weight & conditions
-  const actualGrad   = macg.gradient(s.landingWeight, s.pressureAlt, s.oatC, false);
+  const reqFtNm = valid ? (unit === "pct" ? macg.pctToFtNm(raw) : Math.round(raw)) : null;
+  const actualGrad    = macg.gradient(s.landingWeight, s.pressureAlt, s.oatC, false);
   const actualGradPct = macg.ftNmToPct(actualGrad);
-
-  // Reverse: max weight meeting required MACG
   const limitWt    = reqFtNm != null ? macg.maxWeight(reqFtNm, s.pressureAlt, s.oatC, false) : null;
   const overLimit  = limitWt != null && s.landingWeight > limitWt;
   const underLimit = limitWt != null && s.landingWeight <= limitWt;
-
-  // Display helpers
   const fmtWt = (lbs) => lbs != null ? lbs.toLocaleString() + " lbs" : "—";
   const reqPct  = reqFtNm != null ? macg.ftNmToPct(reqFtNm) : null;
   const reqFtNmDisplay = reqFtNm != null ? reqFtNm : "—";
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{maxWidth: 400}} onClick={e => e.stopPropagation()}>
@@ -354,74 +309,37 @@ function MACGModal({ onClose, fleet, s }) {
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="macg-body">
-
-          {/* Unit toggle */}
           <div className="macg-row">
             <span className="macg-lbl">Input units</span>
-            <Seg
-              options={[{value:"ftNm",label:"ft/NM"},{value:"pct",label:"%"}]}
-              value={unit}
-              onChange={setUnit}
-            />
+            <Seg options={[{value:"ftNm",label:"ft/NM"},{value:"pct",label:"%"}]} value={unit} onChange={setUnit} />
           </div>
-
-          {/* MACG entry */}
           <div className="macg-row">
             <span className="macg-lbl">Required MACG</span>
             <div className="macg-input-wrap">
-              <input
-                className="macg-input"
-                type="number"
-                inputMode="decimal"
-                value={macgInput}
-                min={1}
-                onChange={e => setMacgInput(e.target.value)}
-              />
+              <input className="macg-input" type="number" inputMode="decimal" value={macgInput} min={1} onChange={e => setMacgInput(e.target.value)} />
               <span className="macg-unit">{unit === "pct" ? "%" : "ft/NM"}</span>
             </div>
           </div>
-
-          {/* Show converted equivalent */}
           {valid && (
             <div style={{textAlign:"right", fontSize:11, color:"#8e8e93", marginTop:-8}}>
-              {unit === "pct"
-                ? `= ${reqFtNmDisplay} ft/NM`
-                : `= ${reqPct}%`}
+              {unit === "pct" ? `= ${reqFtNmDisplay} ft/NM` : `= ${reqPct}%`}
             </div>
           )}
-
           <div className="macg-divider" />
-
-          {/* Results */}
           <div className="macg-result">
             <div className="macg-result-row">
               <span className="macg-result-lbl">Actual gradient @ {s.landingWeight.toLocaleString()} lbs</span>
               <span className="macg-result-val">{actualGrad} ft/NM ({actualGradPct}%)</span>
             </div>
-
             {valid && (<>
               <div className="macg-divider" />
               <div className="macg-result-row">
                 <span className="macg-result-lbl">Max weight @ MACG {unit === "pct" ? `${raw}%` : `${reqFtNm} ft/NM`}</span>
-                <span className={`macg-result-val${overLimit ? " warn" : " ok"}`}>
-                  {fmtWt(limitWt)}
-                </span>
+                <span className={`macg-result-val${overLimit ? " warn" : " ok"}`}>{fmtWt(limitWt)}</span>
               </div>
-              {overLimit && (
-                <div style={{fontSize:12, color:"#c0392b", fontWeight:500}}>
-                  ⚠ Landing weight exceeds MACG limit by {(s.landingWeight - limitWt).toLocaleString()} lbs
-                </div>
-              )}
-              {underLimit && limitWt != null && (
-                <div style={{fontSize:12, color:"#578E48"}}>
-                  ✓ Within limit by {(limitWt - s.landingWeight).toLocaleString()} lbs
-                </div>
-              )}
-              {limitWt === null && valid && (
-                <div style={{fontSize:12, color:"#c0392b", fontWeight:500}}>
-                  ⚠ Required gradient exceeds capability at all table weights
-                </div>
-              )}
+              {overLimit && <div style={{fontSize:12, color:"#c0392b", fontWeight:500}}>⚠ Landing weight exceeds MACG limit by {(s.landingWeight - limitWt).toLocaleString()} lbs</div>}
+              {underLimit && limitWt != null && <div style={{fontSize:12, color:"#578E48"}}>✓ Within limit by {(limitWt - s.landingWeight).toLocaleString()} lbs</div>}
+              {limitWt === null && valid && <div style={{fontSize:12, color:"#c0392b", fontWeight:500}}>⚠ Required gradient exceeds capability at all table weights</div>}
             </>)}
           </div>
         </div>
@@ -499,10 +417,10 @@ function FleetPicker({ currentFamilyId, onSelect, onClose }) {
 // TOGGLE LABELS
 // ─────────────────────────────────────────────────────────────────────────────
 const TOGGLE_LABELS = {
-  antiIce:      "Anti-ice ON",
-  catII:        "CAT II",
-  stallProtIce: <span>Stall Prot<br/>Ice Speeds</span>,
-  iceAccretion: "Ice Accretion",
+  antiIce:       "Anti-ice ON",
+  catII:         "CAT II",
+  stallProtIce:  <span>Stall Prot<br/>Ice Speeds</span>,
+  iceAccretion:  "Ice Accretion",
   engineAntiIce: <span>Engine<br/>Anti-ice</span>,
   wingAntiIce:   <span>Wing<br/>Anti-ice</span>,
 };
@@ -545,6 +463,56 @@ function EjetLeftPanel({ s, set, fleet }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ERJ PANEL
+// ─────────────────────────────────────────────────────────────────────────────
+function ERJLeftPanel({ s, set, fleet }) {
+  // Weight limits vary by acType — use weightLimitsByType if available
+  const wLimits = fleet.weightLimitsByType?.[s.acType] ?? fleet.weightLimits;
+  return (
+    <div className="panel">
+      <div className="srow">
+        <div className="lbl">Aircraft Type</div>
+        <Seg options={fleet.acTypeOptions} value={s.acType} onChange={set("acType")} />
+      </div>
+      <div className="srow">
+        <div className="lbl">Flap Setting</div>
+        <Seg options={fleet.flapOptions} value={s.flap} onChange={set("flap")} />
+      </div>
+      <div className="srow">
+        <div className="lbl">Runway Surface</div>
+        <Seg options={fleet.surfaceOptions} value={s.surface} onChange={set("surface")} />
+      </div>
+      <div className="srow">
+        <div className="val">VTGT = VREF+{s.vappAdditive}</div>
+        <Stepper value={s.vappAdditive} onChange={set("vappAdditive")} step={1} min={0} max={20} />
+      </div>
+      <div className="srow">
+        <div className="lbl">Landing Weight</div>
+        <TapInput
+          value={s.landingWeight}
+          onChange={set("landingWeight")}
+          step={wLimits.step}
+          min={wLimits.min}
+          max={wLimits.max}
+          display={s.landingWeight.toLocaleString()}
+        />
+        <Stepper value={s.landingWeight} onChange={set("landingWeight")} step={wLimits.step} min={wLimits.min} max={wLimits.max} />
+      </div>
+      {fleet.toggles?.length > 0 && (
+        <div className="toggle-grid">
+          {fleet.toggles.map(key => (
+            <div key={key} className="toggle-cell">
+              <div className="toggle-lbl">{TOGGLE_LABELS[key]}</div>
+              <Toggle checked={!!s[key]} onChange={set(key)} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -634,11 +602,7 @@ function B737LeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
       <div className="srow">
         <div className="val">
           VAPP = VREF+
-          <TapInput
-            value={s.vrefAdditive}
-            onChange={set("vrefAdditive")}
-            step={1} min={0} max={30}
-          />
+          <TapInput value={s.vrefAdditive} onChange={set("vrefAdditive")} step={1} min={0} max={30} />
         </div>
         <Stepper value={s.vrefAdditive} onChange={set("vrefAdditive")} step={1} min={0} max={30} />
       </div>
@@ -660,7 +624,6 @@ function B737LeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
 
 // ─────────────────────────────────────────────────────────────────────────────
 // B737 NON-NORMAL LEFT PANEL
-// Failure selector replaces flap setting. No autobrake — always max manual.
 // ─────────────────────────────────────────────────────────────────────────────
 function B737NonNormalLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantChange }) {
   return (
@@ -675,11 +638,7 @@ function B737NonNormalLeftPanel({ s, set, fleet, variants, currentVariantId, onV
       </div>
       <div className="srow">
         <div className="lbl">Failure / Configuration</div>
-        <select
-          className="failure-select"
-          value={s.failure}
-          onChange={e => set("failure")(e.target.value)}
-        >
+        <select className="failure-select" value={s.failure} onChange={e => set("failure")(e.target.value)}>
           {fleet.failureOptions.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
@@ -692,11 +651,7 @@ function B737NonNormalLeftPanel({ s, set, fleet, variants, currentVariantId, onV
       <div className="srow">
         <div className="val">
           VAPP = VREF+
-          <TapInput
-            value={s.vrefAdditive}
-            onChange={set("vrefAdditive")}
-            step={1} min={0} max={30}
-          />
+          <TapInput value={s.vrefAdditive} onChange={set("vrefAdditive")} step={1} min={0} max={30} />
         </div>
         <Stepper value={s.vrefAdditive} onChange={set("vrefAdditive")} step={1} min={0} max={30} />
       </div>
@@ -717,9 +672,10 @@ function B737NonNormalLeftPanel({ s, set, fleet, variants, currentVariantId, onV
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RIGHT PANEL  (shared normal + non-normal)
+// RIGHT PANEL  (shared — braking action row hidden for ERJ)
 // ─────────────────────────────────────────────────────────────────────────────
 function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShowMACG }) {
+  const isERJ = fleet.id === "erj";
   return (
     <div className="panel">
       <div className="srow">
@@ -734,38 +690,34 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
       </div>
       <div className="srow">
         <div className="lbl">OAT° C</div>
-        <TapInput
-          value={s.oatC}
-          onChange={set("oatC")}
-          step={1} min={-60} max={55}
-        />
+        <TapInput value={s.oatC} onChange={set("oatC")} step={1} min={-60} max={55} />
         <Stepper value={s.oatC} onChange={set("oatC")} step={1} min={-60} max={55} />
       </div>
       <div className="srow">
         <div className="lbl">Headwind</div>
         <div className="sublbl">(negative for tailwind)</div>
-        <TapInput
-          value={s.headwind}
-          onChange={set("headwind")}
-          step={5} min={-50} max={50}
-        />
+        <TapInput value={s.headwind} onChange={set("headwind")} step={5} min={-50} max={50} />
         <div className="hw-row">
           <Stepper value={s.headwind} onChange={set("headwind")} step={5} min={-50} max={50} />
           <button className="calc-btn" onClick={onCalculate}>Calculate</button>
         </div>
       </div>
-      <div className="srow">
-        <div className="lbl">Braking Action</div>
-        <TapInput
-          value={s.brakingAction}
-          onChange={set("brakingAction")}
-          options={fleet.brakingOptions}
-        />
-        <Stepper value={s.brakingAction} onChange={set("brakingAction")} step={1} min={1} max={6} />
-      </div>
-      <div className="srow">
-        <button className="rcam-btn" onClick={onShowRCAM}>Runway Condition Assessment Matrix</button>
-      </div>
+      {!isERJ && (
+        <div className="srow">
+          <div className="lbl">Braking Action</div>
+          <TapInput
+            value={s.brakingAction}
+            onChange={set("brakingAction")}
+            options={fleet.brakingOptions}
+          />
+          <Stepper value={s.brakingAction} onChange={set("brakingAction")} step={1} min={1} max={6} />
+        </div>
+      )}
+      {!isERJ && (
+        <div className="srow">
+          <button className="rcam-btn" onClick={onShowRCAM}>Runway Condition Assessment Matrix</button>
+        </div>
+      )}
       {fleet.macg && (
         <div className="srow">
           <button className="rcam-btn" onClick={onShowMACG}>MACG</button>
@@ -789,27 +741,17 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
 // ─────────────────────────────────────────────────────────────────────────────
 function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
   const primaryDist = result ? (result.primaryDist ?? result.distances?.MAX_MAN) : null;
-
-  // Climb limit: works for both 737 (climbLimitedKlbs) and E-Jet (climbLimited/structural)
   const climbNote = result && !isNonNormal
     ? result.climbLimitedKlbs != null
       ? `${Math.round(result.climbLimitedKlbs * 1000).toLocaleString()}`
       : result.climbLimited != null
-        ? `${result.climbLimited.toLocaleString()} (${result.structural.toLocaleString()} structural)`
+        ? `${result.climbLimited.toLocaleString()} (${result.structural?.toLocaleString()} structural)`
         : null
     : null;
-
-  // For non-normal, show the QRH-specified VREF label (e.g. "VREF 40+55")
-  const vrefDisplayLabel = isNonNormal && result?.vrefLabel
-    ? result.vrefLabel
-    : (fleet.speedSlots?.[0]?.label ?? "VREF");
-
-  // For 737: only show the VREF matching the scenario/flap, plus VAPP
   const speedSlots = (() => {
     if (fleet.id?.startsWith("b737")) {
       let vrefKey, vrefLabel;
       if (isNonNormal && result?.vrefLabel) {
-        // Use vrefNN which has the QRH additive already baked in (e.g. vref40 + 30)
         vrefKey   = "vrefNN";
         vrefLabel = result.vrefLabel;
       } else {
@@ -824,22 +766,18 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
     }
     return fleet.speedSlots;
   })();
-
   return (
     <div className="bottom-bar">
       <div className="speeds">
-        {speedSlots.map((slot, i) => (
+        {speedSlots.map(slot => (
           <div key={slot.key} className="spd">
             <div className="spd-num" style={{color: slot.color}}>
               {result ? (result.speeds[slot.key] ?? "—") : "—"}
             </div>
-            <div className="spd-lbl">
-              {slot.label}
-            </div>
+            <div className="spd-lbl">{slot.label}</div>
           </div>
         ))}
       </div>
-
       <div className="bottom-mid">
         <div className="bot-actions">
           <button className="bot-btn" onClick={onReset}>Reset</button>
@@ -853,7 +791,6 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
           </>
         )}
       </div>
-
       <div className="dist-block">
         <div className={`dist-num${isNonNormal ? " nn" : ""}`}>
           {primaryDist != null ? `${primaryDist.toLocaleString()} feet` : "— feet"}
@@ -870,11 +807,11 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
 export default function App() {
   const [activeTab,   setActiveTab]   = useState("normal");
   const [familyId,    setFamilyId]    = useState("ejet");
-  const [variantIds,  setVariantIds]  = useState({ ejet: "ejet", a32f: "a319", b737: "b737-800" });
+  // ── FIX: erj entry added so fleetId resolves correctly ──
+  const [variantIds,  setVariantIds]  = useState({ ejet: "ejet", a32f: "a319", b737: "b737-800", erj: "erj" });
   const [states,      setStates]      = useState(() =>
     Object.fromEntries(FAMILY_LIST.flatMap(f => f.variants.map(v => [v.id, { ...v.defaults }])))
   );
-  // Separate state store for non-normal inputs, keyed by fleetId
   const [nnStates,    setNnStates]    = useState(() =>
     Object.fromEntries(FAMILY_LIST.flatMap(f => f.variants.map(v => [v.id, { ...(v.nnDefaults ?? v.defaults) }])))
   );
@@ -895,8 +832,9 @@ export default function App() {
     ? key => val => setNnStates(prev => ({ ...prev, [fleetId]: { ...prev[fleetId], [key]: val } }))
     : key => val => setStates(prev =>   ({ ...prev, [fleetId]: { ...prev[fleetId], [key]: val } }));
 
-  const brkOpt     = fleet.brakingOptions.find(b => b.value === s.brakingAction) || fleet.brakingOptions[0];
-  const brakingLbl = brkOpt.label;
+  // ── FIX: guard brakingOptions for ERJ (uses surfaceOptions instead) ──
+  const brkOpt     = fleet.brakingOptions?.find(b => b.value === s.brakingAction) ?? fleet.brakingOptions?.[0] ?? null;
+  const brakingLbl = brkOpt?.label ?? (fleet.surfaceOptions?.find(o => o.value === s.surface)?.label ?? "");
 
   const calculate = useCallback(() => {
     if (isNonNormal && fleet.calculateNonNormal) {
@@ -923,16 +861,17 @@ export default function App() {
 
   const result = isNonNormal ? (nnResults[fleetId] || null) : (results[fleetId] || null);
 
-  // Title reflects tab
   const titleText = isNonNormal
     ? fleet.title.replace("Normal", "Non-Normal")
     : fleet.title;
+
+  // ── FIX: acLabel for ERJ shows acType from state ──
+  const acLabel = familyId === "ejet" || familyId === "erj" ? s.acType : fleet.label;
 
   return (
     <>
       <style>{css}</style>
       <div className="shell">
-
         <div className="card">
           <div className="title-bar">
             <h1>{titleText}</h1>
@@ -963,6 +902,9 @@ export default function App() {
                   onVariantChange={handleVariantChange}
                 />
               )
+            ) : familyId === "erj" ? (
+              // ── FIX: ERJ gets its own panel ──
+              <ERJLeftPanel s={s} set={setS} fleet={fleet} />
             ) : (
               <EjetLeftPanel s={s} set={setS} fleet={fleet} />
             )}
@@ -978,7 +920,7 @@ export default function App() {
           <BottomBar
             fleet={fleet} result={result} s={s}
             onReset={handleReset}
-            acLabel={familyId === "ejet" ? s.acType : fleet.label}
+            acLabel={acLabel}
             isNonNormal={isNonNormal}
           />
         </div>
@@ -995,11 +937,10 @@ export default function App() {
             {activeTab === "nonnormal" && <div className="tab-bar-indicator" />}
           </button>
         </div>
-
       </div>
 
-      {showRCAM  && <RCAMModal onClose={() => setShowRCAM(false)} />
-      }{showMACG   && <MACGModal onClose={() => setShowMACG(false)} fleet={fleet} s={s} />}
+      {showRCAM  && <RCAMModal onClose={() => setShowRCAM(false)} />}
+      {showMACG  && <MACGModal onClose={() => setShowMACG(false)} fleet={fleet} s={s} />}
       {showFleet && <FleetPicker currentFamilyId={familyId} onSelect={handleFamilyChange} onClose={() => setShowFleet(false)} />}
     </>
   );
