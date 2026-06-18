@@ -29,21 +29,21 @@ import {
 const BASE_DEFAULTS = {
   acType:        "EMB145",
   flap:          "45",
-  vappAdditive:  10,    // VTGT = VREF45 + 10 (per POH; less if VTGT-limited)
+  vappAdditive:  5,    // VTGT = VREF45 + 10 (per POH; less if VTGT-limited)
   landingWeight: 40000,
   antiIce:       false,
   iceAccretion:  false,
-  pressureAlt:   1000,
-  oatC:          24,
-  headwind:      5,
+  pressureAlt:   0,
+  oatC:          15,
+  headwind:      0,
   surface:       "dry",
 };
 
 const BASE_SCHEMA = {
   acTypeOptions: [
-    { value: "EMB145", label: "EMB-145" },
-    { value: "EMB140", label: "EMB-140" },
-    { value: "EMB135", label: "EMB-135" },
+    { value: "EMB145", label: "ERJ-145" },
+    { value: "EMB140", label: "ERJ-140" },
+    { value: "EMB135", label: "ERJ-135" },
   ],
 
   flapOptions: [
@@ -54,7 +54,7 @@ const BASE_SCHEMA = {
   // No QRH braking-action scale published for this distance chart — just dry/wet.
   surfaceOptions: [
     { value: "dry", label: "Dry" },
-    { value: "wet", label: "Wet (+20%)" },
+    { value: "wet", label: "Wet" },
   ],
 
   speedSlots: [
@@ -66,8 +66,8 @@ const BASE_SCHEMA = {
 
   toggles: ["antiIce", "iceAccretion"],
 
-  showShortRunway: false,
-  showCatII: false,
+  showShortRunway: true,
+  showCatII: true,
   showBrakeMode: false,
 
   // Single flat distance value, not a per-braking-setting object.
@@ -87,9 +87,10 @@ const BASE_SCHEMA = {
     const speeds = getEMBSpeeds(s.acType, flapNum, s.landingWeight);
 
     // Flaps 45: factored dispatch distance (POH §12B) — primary planning value.
-    // Flaps 22: unfactored distance from PD-15 (ANAC QRH Rev 8) — crew reference only.
-    //   Wet correction (+20%) is applied to the unfactored F22 distance for surface parity,
-    //   but this remains an unfactored figure — not a Part 121 dispatch basis.
+    // Flaps 22: PD-15 unfactored distance (ANAC QRH Rev 8) × 1.67 regulatory factor,
+    //   then +20% wet correction if applicable. Factor matches the Part 121 basis used
+    //   for the F45 dispatch chart so both flap settings are directly comparable in the UI.
+    //   Unfactored F22 baseline = getPD15UnfactoredDistance({ weightLbs, elevFt, windKt })
     const factoredDist = calcEMBDistanceCorrected({
       acType:    s.acType,
       weightLbs: s.landingWeight,
@@ -98,14 +99,16 @@ const BASE_SCHEMA = {
       surface:   s.surface,
     });
 
-    const unfactoredF22Dist = isF22
+    const factoredF22Dist = isF22
       ? (() => {
+          // unfactored: getPD15UnfactoredDistance({ weightLbs, elevFt, windKt })
           let d = getPD15UnfactoredDistance({
             weightLbs: s.landingWeight,
             elevFt:    s.pressureAlt,
             windKt:    s.headwind,
           });
-          if (isWet) d = Math.round(d * 1.20);
+          d = Math.round(d * 1.67);          // apply Part 121 regulatory factor
+          if (isWet) d = Math.round(d * 1.20); // wet surface correction
           return d;
         })()
       : null;
@@ -120,8 +123,8 @@ const BASE_SCHEMA = {
 
     const structural = EMB_LIMITS[s.acType].structural;
 
-    // primaryDist: F45 → factored dispatch; F22 → unfactored PD-15 (clearly labeled in UI)
-    const primaryDist = isF22 ? unfactoredF22Dist : factoredDist;
+    // primaryDist: F45 → factored dispatch (POH §12B); F22 → PD-15 × 1.67 (+ wet if applicable)
+    const primaryDist = isF22 ? factoredF22Dist : factoredDist;
 
     return {
       speeds: {
@@ -131,12 +134,11 @@ const BASE_SCHEMA = {
         vfs:  speeds.VFS,
       },
       factoredDist,
-      unfactoredF22Dist,
+      factoredF22Dist,
       climbLimited,
       structural,
       primaryDist,
-      // Flag so the UI can label the distance appropriately
-      primaryDistIsUnfactored: isF22,
+      primaryDistIsUnfactored: false, // both paths now factored
     };
   },
 };
@@ -162,7 +164,7 @@ export const erj135Config = makeVariant("EMB135", "ERJ-135");
 export const erjConfig = {
   id: "erj",
   label: "ERJ",
-  title: "ERJ-135/140/145 Required Landing Field Length (Factored Dispatch)",
+  title: "ERJ-135/140/145 In-Flight Normal Landing Distance",
   defaults: { ...BASE_DEFAULTS },
   weightLimits: BASE_SCHEMA.weightLimitsByType.EMB145, // widest range; calculate() clamps per acType
   ...BASE_SCHEMA,
