@@ -42,6 +42,10 @@ function calcFromTables(TABLE_MAP, { weightLbs, flap, brakeMode, pressureAlt, oa
     if (isaDev > 0)          d += table.isaAbovePer10[ccIdx] * (isaDev / 10);
     if (vappAdditive >= 15)  d += table.vappPlus15[ccIdx];
     else if (vappAdditive >= 10) d += table.vappPlus10[ccIdx];
+    // The AOM publishes one reverser correction: a "No Reversers" additive. There
+    // is no single-reverser column, so callers pass reversers=false for both the
+    // 0 and 1 selections — that applies the full zero-reverser penalty to a
+    // one-reverser landing, which is conservative but not the real figure.
     if (!reversers)          d += table.noReverser[ccIdx];
     distances[cc] = Math.round(d / 10) * 10;
   }

@@ -30,9 +30,9 @@ export const a320Config = {
     reversers:     "Both",
     vappAdditive:  5,
     landingWeight: 142100,
-    engineAntiIce: false,
-    wingAntiIce:   false,
-    iceAccretion:  false,
+    autothrust:      false,
+    autoland:        false,
+    shortRwyStation: false,
     pressureAlt:   1000,
     oatC:          24,
     headwind:      5,
@@ -41,9 +41,10 @@ export const a320Config = {
 
   // Distance tables are gridded 100–169.7k lb; MLW is 142.1k lb.
   weightLimits: { min: 100000, max: 169700, step: 1000 },
-  flapOptions:      [{ value: "CONF FULL", label: "CONF FULL" }, { value: "CONF 3", label: "CONF 3" }],
+  flapOptions:      [{ value: "CONF 3", label: "3" }, { value: "CONF FULL", label: "Full" }],
   brakeModeOptions: [{ value: "MAX_MAN", label: "Max Manual" }, { value: "MED", label: "MED Auto" }, { value: "LOW", label: "LOW Auto" }],
-  reverserOptions:  [{ value: "Both", label: "Both" }, { value: "None", label: "None" }],
+  // AOM 16p.16: Operative Thrust Reversers is 0, Both or 1. See note in calculate().
+  reverserOptions:  [{ value: "0", label: "0" }, { value: "1", label: "1" }, { value: "Both", label: "Both" }],
   brakingOptions: [
     { value: 6, label: "6 - Dry",      surface: "dry"  },
     { value: 5, label: "5 - Good",     surface: "dry"  },
@@ -59,8 +60,8 @@ export const a320Config = {
     { key: "s",    label: "S",    color: "#ff9500" },
     { key: "o",    label: "O",    color: "#8e8e93" },
   ],
-  toggles: ["engineAntiIce", "wingAntiIce", "iceAccretion"],
-  showShortRunway: false,
+  toggles: ["autothrust", "autoland"],
+  showShortRunway: true,
   showCatII: false,
   showBrakeMode: true,
   primaryDistKey: "byRwyCC",
@@ -79,6 +80,8 @@ export const a320Config = {
       oatC:         s.oatC,
       headwind:     s.headwind,
       vappAdditive: s.vappAdditive,
+      // Only "Both" credits reverse thrust. "0" and "1" both fall through to the
+      // full no-reverser penalty — see the note in calcFromTables in calc.js.
       reversers:    s.reversers === "Both",
     });
 

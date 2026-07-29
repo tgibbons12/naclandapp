@@ -148,21 +148,23 @@ const css = `
     margin: 0 8px 8px;
     border-radius: 0 0 8px 8px;
     padding: 8px 16px 10px;
-    display: flex; align-items: center;
-    gap: 8px; flex-shrink: 0; flex-wrap: nowrap;
+    /* Three tracks with equal 1fr outers, so the middle block sits at true
+       centre whether or not the speeds column has content. */
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    gap: 8px; flex-shrink: 0;
   }
-  .speeds { display: flex; gap: 20px; align-items: flex-end; flex-shrink: 0; }
+  .speeds { display: flex; gap: 20px; align-items: flex-end; justify-self: start; min-width: 0; }
   .spd { display: flex; flex-direction: column; align-items: flex-start; }
   .spd-num { font-size: clamp(26px, 4vw, 36px); font-weight: 300; line-height: 1; }
   .spd-lbl { font-size: 10px; color: #8e8e93; margin-top: 2px; letter-spacing: 0.2px; text-transform: uppercase; }
-  .bottom-mid { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+  .bottom-mid { justify-self: center; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
   .bot-actions { display: flex; gap: 20px; align-items: center; }
   .bot-btn { background: none; border: none; color: #007aff; font-size: 14px; font-family: inherit; cursor: pointer; }
   .bot-btn:active { opacity: 0.5; }
   .bot-type { font-size: 16px; font-weight: 700; color: #578E48; }
   .bot-note { font-size: 11px; color: #578E48; text-align: center; font-weight: 400; }
   .bot-sub { font-size: 10px; color: #8e8e93; text-align: center; }
-  .dist-block { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+  .dist-block { display: flex; flex-direction: column; align-items: flex-end; justify-self: end; }
   .dist-num { font-size: clamp(28px, 4.5vw, 40px); font-weight: 400; color: #000; line-height: 1; white-space: nowrap; }
   .dist-lbl { font-size: 11px; color: #8e8e93; text-align: right; margin-top: 2px; }
   .dist-num.nn { color: #c0392b; }
@@ -434,6 +436,8 @@ const TOGGLE_LABELS = {
   iceAccretion:  "Ice Accretion",
   engineAntiIce: <span>Engine<br/>Anti-ice</span>,
   wingAntiIce:   <span>Wing<br/>Anti-ice</span>,
+  autothrust:    "Autothrust",
+  autoland:      "Autoland",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -553,7 +557,7 @@ function A32FLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
         />
       </div>
       <div className="srow">
-        <div className="lbl">Configuration</div>
+        <div className="lbl">Flap Lever Position</div>
         <Seg options={fleet.flapOptions} value={s.flap} onChange={set("flap")} />
       </div>
       <div className="srow">
@@ -561,7 +565,7 @@ function A32FLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
         <Seg options={fleet.brakeModeOptions} value={s.brakeMode} onChange={set("brakeMode")} />
       </div>
       <div className="srow">
-        <div className="lbl">Thrust Reversers</div>
+        <div className="lbl">Operative Thrust Reversers</div>
         <Seg options={fleet.reverserOptions} value={s.reversers} onChange={set("reversers")} />
       </div>
       <div className="srow">
@@ -800,18 +804,18 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
   })();
   return (
     <div className="bottom-bar">
-      {showSpeeds && (
-        <div className="speeds">
-          {speedSlots.map(slot => (
-            <div key={slot.key} className="spd">
-              <div className="spd-num" style={{color: slot.color}}>
-                {result ? (result.speeds[slot.key] ?? "—") : "—"}
-              </div>
-              <div className="spd-lbl">{slot.label}</div>
+      {/* Always rendered, empty when hidden, so the grid keeps three tracks and
+          the middle block stays centred on fleets without speeds. */}
+      <div className="speeds">
+        {showSpeeds && speedSlots.map(slot => (
+          <div key={slot.key} className="spd">
+            <div className="spd-num" style={{color: slot.color}}>
+              {result ? (result.speeds[slot.key] ?? "—") : "—"}
             </div>
-          ))}
-        </div>
-      )}
+            <div className="spd-lbl">{slot.label}</div>
+          </div>
+        ))}
+      </div>
       <div className="bottom-mid">
         <div className="bot-actions">
           <button className="bot-btn" onClick={onReset}>Reset</button>
@@ -900,7 +904,11 @@ export default function App() {
     : fleet.title;
 
   // ── FIX: acLabel for ERJ shows acType from state ──
-  const acLabel = familyId === "ejet" || familyId === "erj" ? s.acType : fleet.label;
+  // Fleets may carry a longer formal designation for the bottom bar than the
+  // short name used in the Aircraft Type picker (e.g. A321NA/NX → A321 LEAP-1A).
+  const acLabel = familyId === "ejet" || familyId === "erj"
+    ? s.acType
+    : (fleet.bottomLabel ?? fleet.label);
 
   return (
     <>
