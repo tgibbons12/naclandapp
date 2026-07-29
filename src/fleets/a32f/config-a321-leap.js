@@ -4,6 +4,7 @@ import {
   A321NEO_ANTI_ICE,
   lookupA321Speeds,
 } from "./calc.js";
+import { calcSNA } from "./calc-short-runway.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A321 LEAP-1A  (A321-253NX)
@@ -36,6 +37,7 @@ export const a321LeapConfig = {
     landingWeight: 174600,
     autothrust:      false,
     autoland:        false,
+    iceAccretion:    false,
     shortRwyStation: false,
     pressureAlt:   1000,
     oatC:          24,
@@ -64,8 +66,15 @@ export const a321LeapConfig = {
     { key: "s",    label: "S",    color: "#ff9500" },
     { key: "o",    label: "O",    color: "#8e8e93" },
   ],
-  toggles: ["autothrust", "autoland"],
+  toggles: ["autothrust", "autoland", "iceAccretion"],
   showShortRunway: true,
+  // AOM 12p.5.8 — same four station groups as the ceo, with A321NA/A321NX tables.
+  shortRunwayStations: [
+    { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },
+    { value: "dca-15-33",   label: "DCA 15/33" },
+    { value: "sna-02l",     label: "SNA 02L" },
+    { value: "sna-20r",     label: "SNA 20R" },
+  ],
   showCatII: false,
   showBrakeMode: true,
   primaryDistKey: "byRwyCC",
@@ -99,11 +108,30 @@ export const a321LeapConfig = {
       climbLimitedKlbs = climbLimitedKlbs - corr / 1000;
     }
 
+    // A special station replaces the normal result entirely — the AOM directs its
+    // table be used "in lieu of" the normal data, so the normal distance must not
+    // be presented alongside it.
+    const special = s.shortRwyStation
+      ? calcSNA({
+          station:        s.shortRwyId,
+          typeKey:        "a321-leap",
+          brakeMode:      s.brakeMode,
+          weightLbs:      s.landingWeight,
+          oatC:           s.oatC,
+          headwind:       s.headwind,
+          vappAdditive:   s.vappAdditive,
+          brakingAction:  s.brakingAction,
+        })
+      : null;
+
     return {
       speeds: { vls, vapp, f: speeds.F, s: speeds.S, o: speeds.O },
       distances,
       climbLimitedKlbs,
-      primaryDist: distances ? distances[s.brakingAction] : null,
+      special,
+      primaryDist: special
+        ? (special.tooShort ? null : special.requiredFt)
+        : (distances ? distances[s.brakingAction] : null),
     };
   },
 };

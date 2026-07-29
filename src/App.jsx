@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { FLEETS, FAMILY_LIST } from "./lib/fleetRegistry.js";
+import { hasSpecialData } from "./fleets/a32f/calc-short-runway.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RCAM DATA
@@ -55,10 +56,11 @@ const css = `
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   }
   .title-settings-btn:active { opacity: 0.5; }
+  /* Wide grey bezel around and between the panels, as in the real app. */
   .panels {
     display: grid; grid-template-columns: 1fr 1fr;
     flex: 1; min-height: 0;
-    padding: 8px 8px 0; gap: 16px;
+    padding: 14px 14px 0; gap: 26px;
   }
   @media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
   .panel {
@@ -111,6 +113,7 @@ const css = `
   .hw-row { display: flex; align-items: center; gap: 10px; }
   .short-row { display: flex; align-items: center; gap: 10px; justify-content: center; }
   .short-none { font-size: 14px; color: #8e8e93; }
+  .short-warn { font-size: 10.5px; color: #c0392b; text-align: center; line-height: 1.35; max-width: 260px; margin-top: 2px; }
   /* ── TAP INPUT ── */
   /* Values in the real app are plain blue text with no underline or chrome. */
   .tap-val {
@@ -144,9 +147,9 @@ const css = `
   /* ── BOTTOM BAR ── */
   .bottom-bar {
     background: #ffffff;
-    border-top: 1px solid #c6c6c8;
-    margin: 0 8px 8px;
-    border-radius: 0 0 8px 8px;
+    border: 1px solid #d0d0d5;
+    margin: 14px;
+    border-radius: 10px;
     padding: 8px 16px 10px;
     /* Three tracks with equal 1fr outers, so the middle block sits at true
        centre whether or not the speeds column has content. */
@@ -592,15 +595,6 @@ function A32FLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
           </div>
         ))}
       </div>
-      {fleet.showShortRunway && (
-        <div className="srow">
-          <div className="lbl">Short Runway Station</div>
-          <div className="short-row">
-            <Toggle checked={!!s.shortRwyStation} onChange={set("shortRwyStation")} />
-            <span className="short-none">None</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -708,6 +702,9 @@ function B737NonNormalLeftPanel({ s, set, fleet, variants, currentVariantId, onV
 // ─────────────────────────────────────────────────────────────────────────────
 function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShowMACG }) {
   const isERJ = fleet.id === "erj";
+  // Stations carrying special inflight landing data for this type. See
+  // docs/short-runway-stations.md for the assumptions behind each one.
+  const stations = fleet.shortRunwayStations ?? [];
   return (
     <div className="panel">
       <div className="srow">
@@ -760,8 +757,22 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
           <div className="lbl">Short Runway Station</div>
           <div className="short-row">
             <Toggle checked={!!s.shortRwyStation} onChange={set("shortRwyStation")} />
-            <span className="short-none">None</span>
+            {s.shortRwyStation && stations.length > 0 ? (
+              <TapInput
+                value={s.shortRwyId ?? stations[0].value}
+                onChange={set("shortRwyId")}
+                options={stations}
+              />
+            ) : (
+              <span className="short-none">None</span>
+            )}
           </div>
+          {s.shortRwyStation && !hasSpecialData(s.shortRwyId ?? stations[0]?.value) && (
+            <div className="short-warn">
+              Special table data not loaded for this station. Normal in-flight data
+              is not valid here — refer to the AOM or the iPad Land App.
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -784,6 +795,9 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
   // Opt in per fleet with `showSpeeds: true`; everything else hides the block.
   // Speed lookups stay wired up in each config so this is display-only.
   const showSpeeds = fleet.showSpeeds ?? false;
+  // When a special-station table is in play it replaces the normal result, and the
+  // readout switches from "landing distance" to "required runway length vs LDA".
+  const special = result?.special ?? null;
   const speedSlots = (() => {
     if (fleet.id?.startsWith("b737")) {
       let vrefKey, vrefLabel;
@@ -830,10 +844,20 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
         )}
       </div>
       <div className="dist-block">
-        <div className={`dist-num${isNonNormal ? " nn" : ""}`}>
-          {primaryDist != null ? `${primaryDist.toLocaleString()} feet` : "— feet"}
+        <div className={`dist-num${isNonNormal || special?.tooShort || special?.exceedsLDA ? " nn" : ""}`}>
+          {special?.tooShort
+            ? "TOO SHORT"
+            : primaryDist != null ? `${primaryDist.toLocaleString()} feet` : "— feet"}
         </div>
-        <div className="dist-lbl">Landing Distance</div>
+        <div className="dist-lbl">
+          {special
+            ? (special.tooShort
+                ? "Runway too short for landing"
+                : special.exceedsLDA
+                  ? `Required — exceeds LDA ${special.ldaFt.toLocaleString()} ft`
+                  : `Required Runway Landing Length (LDA ${special.ldaFt.toLocaleString()} ft)`)
+            : "Landing Distance"}
+        </div>
       </div>
     </div>
   );

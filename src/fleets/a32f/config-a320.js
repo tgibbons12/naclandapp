@@ -32,6 +32,7 @@ export const a320Config = {
     landingWeight: 142100,
     autothrust:      false,
     autoland:        false,
+    iceAccretion:    false,
     shortRwyStation: false,
     pressureAlt:   1000,
     oatC:          24,
@@ -60,8 +61,13 @@ export const a320Config = {
     { key: "s",    label: "S",    color: "#ff9500" },
     { key: "o",    label: "O",    color: "#8e8e93" },
   ],
-  toggles: ["autothrust", "autoland"],
+  toggles: ["autothrust", "autoland", "iceAccretion"],
   showShortRunway: true,
+  // AOM 12p.5.5 — two station groups carry special inflight landing data for the A320.
+  shortRunwayStations: [
+    { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },
+    { value: "dca-15-33",   label: "DCA 15/33" },
+  ],
   showCatII: false,
   showBrakeMode: true,
   primaryDistKey: "byRwyCC",
