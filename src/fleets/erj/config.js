@@ -57,6 +57,7 @@ const BASE_SCHEMA = {
     { value: "wet", label: "Wet" },
   ],
 
+  showSpeeds: true,
   speedSlots: [
     { key: "vref", label: "VREF", color: "#ff3b30" },
     { key: "vtgt", label: "VTGT", color: "#34c759" },

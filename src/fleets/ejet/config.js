@@ -54,6 +54,7 @@ export const ejetConfig = {
   toggles: ["antiIce", "catII", "stallProtIce", "iceAccretion"],
 
   // Bottom bar speed slots: { key, label, color }
+  showSpeeds: true,
   speedSlots: [
     { key: "vref", label: "VREF", color: "#ff3b30" },
     { key: "vapp", label: "VAPP", color: "#34c759" },

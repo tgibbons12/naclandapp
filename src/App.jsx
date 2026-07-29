@@ -68,8 +68,8 @@ const css = `
     border: 1px solid #d0d0d5; border-radius: 10px;
     overflow-y: auto; min-height: 0;
   }
-  .srow { display: flex; flex-direction: column; align-items: center; padding: 7px 0 6px; gap: 5px; }
-  .srow + .srow { border-top: 1px solid #e5e5ea; }
+  /* No row dividers — the real app's panels are clean white with spacing only. */
+  .srow { display: flex; flex-direction: column; align-items: center; padding: 8px 0 7px; gap: 5px; }
   .lbl { font-size: 13px; font-weight: 400; color: #000; text-align: center; line-height: 1.3; }
   .sublbl { font-size: 11px; color: #8e8e93; text-align: center; margin-top: -2px; }
   .val { font-size: 15px; color: #007aff; text-align: center; }
@@ -82,15 +82,16 @@ const css = `
   }
   .seg-btn.active { background: #ffffff; color: #000; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.18), 0 1px 1px rgba(0,0,0,0.06); }
   .seg-btn:not(.active):active { background: rgba(0,0,0,0.05); }
-  .stepper { display: inline-flex; align-items: stretch; border-radius: 9px; overflow: hidden; border: 1px solid rgba(0,0,0,0.15); background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  /* Light-grey pill split by a hairline, matching the real app's −/+ control. */
+  .stepper { display: inline-flex; align-items: stretch; border-radius: 8px; overflow: hidden; background: #EFEFF0; }
   .step-btn {
-    background: #fff; border: none; color: #007aff; font-size: 20px; font-weight: 300;
-    width: 42px; height: 30px; cursor: pointer; display: flex; align-items: center;
+    background: transparent; border: none; color: #3c3c43; font-size: 19px; font-weight: 300;
+    width: 44px; height: 30px; cursor: pointer; display: flex; align-items: center;
     justify-content: center; font-family: inherit; line-height: 1;
     user-select: none; -webkit-user-select: none; transition: background 0.1s;
   }
-  .step-divider { width: 1px; background: rgba(0,0,0,0.15); flex-shrink: 0; }
-  .step-btn:active { background: #E4E3EA; }
+  .step-divider { width: 1px; background: rgba(0,0,0,0.10); flex-shrink: 0; margin: 5px 0; }
+  .step-btn:active { background: rgba(0,0,0,0.08); }
   .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; padding: 6px 0 4px; width: 100%; }
   .toggle-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .toggle-lbl { font-size: 12px; color: #000; text-align: center; line-height: 1.2; }
@@ -111,12 +112,13 @@ const css = `
   .short-row { display: flex; align-items: center; gap: 10px; justify-content: center; }
   .short-none { font-size: 14px; color: #8e8e93; }
   /* ── TAP INPUT ── */
+  /* Values in the real app are plain blue text with no underline or chrome. */
   .tap-val {
     font-size: 15px; color: #007aff; text-align: center;
     cursor: pointer; position: relative; display: inline-block;
-    border-bottom: 1px dashed rgba(0,122,255,0.35);
     padding-bottom: 1px;
   }
+  .tap-val:active { opacity: 0.5; }
   /* Select overlays the label fully transparent — iOS shows drum-roll picker on tap */
   .tap-val select {
     position: absolute; inset: 0;
@@ -261,7 +263,16 @@ function TapInput({ value, onChange, step = 1, min = -9999, max = 99999, display
   return (
     <span className="tap-val">
       {visibleLabel}
-      <select value={value} onChange={e => onChange(Number(e.target.value))}>
+      {/* Options may be numeric (weights, OAT) or string ids (variant, acType).
+          Round-trip through the matching option so the original type survives. */}
+      <select
+        value={value}
+        onChange={e => {
+          const raw = e.target.value;
+          const match = opts.find(o => String(o.value) === raw);
+          onChange(match ? match.value : Number(raw));
+        }}
+      >
         {opts.map(o => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
@@ -434,8 +445,11 @@ function EjetLeftPanel({ s, set, fleet }) {
       {fleet.acTypeOptions && (
         <div className="srow">
           <div className="lbl">Aircraft Type</div>
-          <div className="val">{s.acType}</div>
-          <Seg options={fleet.acTypeOptions} value={s.acType} onChange={set("acType")} />
+          <TapInput
+            value={s.acType}
+            onChange={set("acType")}
+            options={fleet.acTypeOptions}
+          />
         </div>
       )}
       <div className="srow">
@@ -452,7 +466,14 @@ function EjetLeftPanel({ s, set, fleet }) {
       </div>
       <div className="srow">
         <div className="lbl">Landing Weight</div>
-        <div className="val">{s.landingWeight.toLocaleString()}</div>
+        <TapInput
+          value={s.landingWeight}
+          onChange={set("landingWeight")}
+          step={fleet.weightLimits.step}
+          min={fleet.weightLimits.min}
+          max={fleet.weightLimits.max}
+          display={s.landingWeight.toLocaleString()}
+        />
         <Stepper value={s.landingWeight} onChange={set("landingWeight")} step={fleet.weightLimits.step} min={fleet.weightLimits.min} max={fleet.weightLimits.max} />
       </div>
       <div className="toggle-grid">
@@ -525,8 +546,8 @@ function A32FLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
     <div className="panel">
       <div className="srow">
         <div className="lbl">Aircraft Type</div>
-        <Seg
-          options={variants.map(v => ({ value: v.id, label: v.label.replace("A321 ","321 ").replace("A319","319") }))}
+        <TapInput
+          options={variants.map(v => ({ value: v.id, label: v.label }))}
           value={currentVariantId}
           onChange={onVariantChange}
         />
@@ -549,7 +570,14 @@ function A32FLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
       </div>
       <div className="srow">
         <div className="lbl">Landing Weight</div>
-        <div className="val">{s.landingWeight.toLocaleString()}</div>
+        <TapInput
+          value={s.landingWeight}
+          onChange={set("landingWeight")}
+          step={fleet.weightLimits.step}
+          min={fleet.weightLimits.min}
+          max={fleet.weightLimits.max}
+          display={s.landingWeight.toLocaleString()}
+        />
         <Stepper value={s.landingWeight} onChange={set("landingWeight")} step={fleet.weightLimits.step} min={fleet.weightLimits.min} max={fleet.weightLimits.max} />
       </div>
       <div className="toggle-grid">
@@ -581,7 +609,7 @@ function B737LeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
     <div className="panel">
       <div className="srow">
         <div className="lbl">Aircraft Type</div>
-        <Seg
+        <TapInput
           options={variants.map(v => ({ value: v.id, label: v.label }))}
           value={currentVariantId}
           onChange={onVariantChange}
@@ -630,7 +658,7 @@ function B737NonNormalLeftPanel({ s, set, fleet, variants, currentVariantId, onV
     <div className="panel">
       <div className="srow">
         <div className="lbl">Aircraft Type</div>
-        <Seg
+        <TapInput
           options={variants.map(v => ({ value: v.id, label: v.label }))}
           value={currentVariantId}
           onChange={onVariantChange}
@@ -748,6 +776,10 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
         ? `${result.climbLimited.toLocaleString()} (${result.structural?.toLocaleString()} structural)`
         : null
     : null;
+  // The real Land App only presents approach speeds on the Embraer fleets.
+  // Opt in per fleet with `showSpeeds: true`; everything else hides the block.
+  // Speed lookups stay wired up in each config so this is display-only.
+  const showSpeeds = fleet.showSpeeds ?? false;
   const speedSlots = (() => {
     if (fleet.id?.startsWith("b737")) {
       let vrefKey, vrefLabel;
@@ -768,16 +800,18 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
   })();
   return (
     <div className="bottom-bar">
-      <div className="speeds">
-        {speedSlots.map(slot => (
-          <div key={slot.key} className="spd">
-            <div className="spd-num" style={{color: slot.color}}>
-              {result ? (result.speeds[slot.key] ?? "—") : "—"}
+      {showSpeeds && (
+        <div className="speeds">
+          {speedSlots.map(slot => (
+            <div key={slot.key} className="spd">
+              <div className="spd-num" style={{color: slot.color}}>
+                {result ? (result.speeds[slot.key] ?? "—") : "—"}
+              </div>
+              <div className="spd-lbl">{slot.label}</div>
             </div>
-            <div className="spd-lbl">{slot.label}</div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       <div className="bottom-mid">
         <div className="bot-actions">
           <button className="bot-btn" onClick={onReset}>Reset</button>
@@ -795,7 +829,7 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
         <div className={`dist-num${isNonNormal ? " nn" : ""}`}>
           {primaryDist != null ? `${primaryDist.toLocaleString()} feet` : "— feet"}
         </div>
-        <div className="dist-lbl">Required Landing Distance</div>
+        <div className="dist-lbl">Landing Distance</div>
       </div>
     </div>
   );

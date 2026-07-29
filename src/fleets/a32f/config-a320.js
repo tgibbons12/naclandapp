@@ -1,35 +1,35 @@
 import {
-  calcA321Neo,
-  lookupA321NeoClimbLimited,
-  A321NEO_ANTI_ICE,
-  lookupA321Speeds,
+  calcA320,
+  lookupA320ClimbLimited,
+  A320_ANTI_ICE,
+  lookupA319Speeds,
 } from "./calc.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// A321 LEAP-1A  (A321-253NX)
+// A320
 //
-// Landing distance + climb-limited data: A32F AOM 12p.5.7 / 12p.3.
+// Landing distance + climb-limited data: A32F AOM 12p.5.4 / 12p.3.4.
 //
-// NOTE ON SPEEDS: the AOM performance chapter carries no LEAP-1A landing speed
-// table, so lookupA321Speeds (IAE/CFM56 ceo values) stands in below. These are
-// NOT rendered — `showSpeeds` is unset, so the bottom bar hides the speed block
-// for this fleet, matching the real Land App. If speeds are ever turned on here,
-// swap in a real A321neo speed table first; the ceo values are not correct for
-// the neo and the ceo table also tops out below this variant's MLW.
+// NOTE ON SPEEDS: the AOM performance chapter carries no A320 landing speed
+// table. The A319 shares the A320 wing, so lookupA319Speeds stands in below.
+// These are NOT rendered — `showSpeeds` is unset, so the bottom bar hides the
+// speed block for this fleet, matching the real Land App. If speeds are ever
+// turned on here, swap in a real A320 table first: the A319 table tops out at
+// 154.3k lb and clamps above that, while this grid runs to 169.7k lb.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const a321LeapConfig = {
-  id: "a321-leap",
-  label: "A321 LEAP",
-  title: "A321 LEAP-1A In-Flight Normal Landing Distance",
-  maxWeight: 205000,
+export const a320Config = {
+  id: "a320",
+  label: "A320",
+  title: "A320 In-Flight Normal Landing Distance",
+  maxWeight: 169700,
 
   defaults: {
     flap:          "CONF FULL",
     brakeMode:     "MAX_MAN",
     reversers:     "Both",
     vappAdditive:  5,
-    landingWeight: 174600,
+    landingWeight: 142100,
     engineAntiIce: false,
     wingAntiIce:   false,
     iceAccretion:  false,
@@ -39,8 +39,8 @@ export const a321LeapConfig = {
     brakingAction: 6,
   },
 
-  // Distance tables are gridded 140–205k lb; below 140k the interpolation clamps.
-  weightLimits: { min: 140000, max: 205000, step: 1000 },
+  // Distance tables are gridded 100–169.7k lb; MLW is 142.1k lb.
+  weightLimits: { min: 100000, max: 169700, step: 1000 },
   flapOptions:      [{ value: "CONF FULL", label: "CONF FULL" }, { value: "CONF 3", label: "CONF 3" }],
   brakeModeOptions: [{ value: "MAX_MAN", label: "Max Manual" }, { value: "MED", label: "MED Auto" }, { value: "LOW", label: "LOW Auto" }],
   reverserOptions:  [{ value: "Both", label: "Both" }, { value: "None", label: "None" }],
@@ -67,11 +67,11 @@ export const a321LeapConfig = {
 
   calculate(s) {
     const confFull = s.flap === "CONF FULL";
-    const speeds   = lookupA321Speeds(s.landingWeight, confFull);
+    const speeds   = lookupA319Speeds(s.landingWeight, confFull);
     const vls  = speeds.VLS;
     const vapp = vls + s.vappAdditive;
 
-    const distances = calcA321Neo({
+    const distances = calcA320({
       weightLbs:    s.landingWeight,
       flap:         s.flap,
       brakeMode:    s.brakeMode,
@@ -82,9 +82,9 @@ export const a321LeapConfig = {
       reversers:    s.reversers === "Both",
     });
 
-    let climbLimitedKlbs = lookupA321NeoClimbLimited(confFull, s.pressureAlt, s.oatC);
+    let climbLimitedKlbs = lookupA320ClimbLimited(confFull, s.pressureAlt, s.oatC);
     if (climbLimitedKlbs != null) {
-      const antiIce = A321NEO_ANTI_ICE[s.flap] ?? A321NEO_ANTI_ICE["CONF FULL"];
+      const antiIce = A320_ANTI_ICE[s.flap] ?? A320_ANTI_ICE["CONF FULL"];
       let corr = 0;
       if (s.wingAntiIce) corr += antiIce.engineWing;
       else if (s.engineAntiIce) corr += antiIce.engineOnly;
