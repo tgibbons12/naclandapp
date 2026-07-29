@@ -1,0 +1,93 @@
+cp ~/Downloads/calc.js ~/Downloads/config.js \
+  /Users/tobygibbons/naclandapp/src/fleets/erj/
+
+cd /Users/tobygibbons/naclandapp
+git add src/fleets/erj/calc.js src/fleets/erj/config.js
+git commit -m “FACTORED”
+git push
+
+Adding a new aircraft to naclandapp — data requirements and integration pattern
+
+What you need from source documents
+Two categories of data, both required:
+Speed tables — per weight row (lbs, rounded up to next 1,000 lb for lookup): VFS, VREF, VGA9, VTGT. One table per flap setting (typically Flaps 45 and Flaps 22). Source: POH Chapter 9 / speeds section. If VTGT is structurally limited at high weights, note the cap.
+Landing distance tables — two separate bases:
+	1	Factored dispatch distance (the "planning" number, 1.667× / Part 121 40% factor already baked in). Published per weight × altitude grid, Flaps 45 only in every POH seen so far. Source: POH §12B or equivalent dispatch chart. Wind and wet corrections are percentage-based (typically −5% per 10 kt HW, +15% per 10 kt TW, +20% wet).
+	2	Unfactored performance distance, Flaps 22. Source: QRH performance data section (e.g. ANAC PD-15 for the ERJ). Published in a weight × altitude × wind grid. Strategy: extract the calm-wind (0 kt) column only, store that as the baseline table, then derive wind sensitivity constants from the tabular deltas (measure HW and TW delta per 10 kt across several cells, take the mean). Apply 1.67× in code to bring it onto the same factored basis as the F45 dispatch chart.
+Approach climb limit weight table — indexed by OAT × pressure altitude, separate Anti-Ice ON and OFF tables. Source: POH §12A. Used to determine if landing weight is climb-limited. Bilinear interpolation across both axes; returns null for off-chart combinations.
+Structural MLW and ice accretion penalty — two numbers, per variant. Goes into EMB_LIMITS-style constant.
+
+Unit conventions
+Source data
+What to store
+kg / meters (ANAC/Brazilian docs)
+Convert to lbs / feet at table-entry time (× 2.20462 / × 3.28084). Store lbs/ft in the JS table, add kg/m comment on each row.
+lbs / feet (US POH)
+Store as-is.
+Always
+Round converted values to nearest whole number.
+
+calc.js — what to add
+
+
+SPEED TABLES         one const per variant+flap  e.g. EMB145_F45, EMB145_F22
+lookupSpeeds()       round-up weight, scan table, return speed object
+getXXXSpeeds()       public export — selects table by acType + flap
+
+FACTORED DIST TABLE  one const per variant        e.g. EMB145_DIST
+                     row: [weight, distSL, dist1k, ... dist8k]
+bilinearLookup()     already exists — reuse, don't duplicate
+getXXXFactoredDist() public export wrapping bilinearLookup()
+calcXXXDistCorrected() applies wind % and wet % corrections, returns rounded ft
+
+UNFACTORED F22 TABLE calm-wind only, weight × altitude
+                     row: [weight, distSL, dist1k, ... dist5k]
+HW/TW delta consts   derived from source table pattern analysis
+getXXXUnfactoredDist() bilinearLookup() + linear wind adjustment, returns ft
+
+CLIMB LIMIT TABLES   EMB-style: OFF and ON per variant, temp × elev
+climbBilinear()      already exists — reuse
+getXXXClimbLimit()   public export, applies ice penalty, clamps to structural MLW
+
+LIMITS CONST         { structural, icePenalty } per variant
+
+config.js — what to add
+
+
+import new exports from calc.js
+
+BASE_DEFAULTS        set acType, flap, weight, pressureAlt, oatC, headwind, surface
+acTypeOptions        variant labels
+flapOptions          45 + 22 (note if 22 has distance data or speeds only)
+surfaceOptions       Dry / Wet (+20%) — no RCAM scale for POH dispatch charts
+speedSlots           VREF, VTGT, VGA9, VFS with colors
+weightLimitsByType   min/max/step per variant
+toggles              antiIce, iceAccretion
+
+calculate(s):
+  flapNum = Number(s.flap)
+  isF22   = flapNum === 22
+  isWet   = String(s.surface).toLowerCase() === "wet"
+
+  speeds          → getXXXSpeeds()
+  factoredDist    → calcXXXDistCorrected()   (always computed, F45 basis)
+  factoredF22Dist → isF22 ? getXXXUnfactoredDist() × 1.67 × (1.20 if wet) : null
+  climbLimited    → getXXXClimbLimit()
+  structural      → LIMITS const
+
+  primaryDist = isF22 ? factoredF22Dist : factoredDist
+
+  return { speeds, factoredDist, factoredF22Dist, climbLimited,
+           structural, primaryDist, primaryDistIsUnfactored: false }
+
+makeVariant()    one-liner that stamps acType into BASE_DEFAULTS + weightLimits
+exports          one config per variant + one combined config with acType toggle
+
+Gotchas learned on the ERJ
+	•	s.flap may arrive as string or number — always normalize with Number(s.flap) before comparing.
+	•	s.surface may arrive with inconsistent casing — always normalize with String(s.surface).toLowerCase().
+	•	Wet correction on F22 goes on top of the 1.67 factor, not before it — factor first, wet second.
+	•	Tailwind asymmetry (~3:1 vs headwind) is real and consistent; don't average HW and TW into a single delta.
+	•	bilinearLookup() already handles weight clamping to table min/max — no need to guard separately.
+	•	calm-wind column extraction from a multi-wind table: use the 0 kt column exactly, don't average across wind columns.
+	•	If the source table only goes to 5,000 ft (e.g. EMB-135), use a separate ELEV_COLS constant — don't reuse the 8,000 ft one.
