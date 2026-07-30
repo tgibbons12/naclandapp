@@ -32,7 +32,7 @@ const css = `
     height: 100dvh; width: 100%;
     display: flex; flex-direction: column;
     background: #E4E3EA;
-    padding: 16px 16px 0;
+    padding: 4px 10px 6px;
   }
   .card {
     background: #9B9B9B;
@@ -49,8 +49,8 @@ const css = `
   .title-bar {
     background: #E4E3EA;
     display: flex; align-items: center; justify-content: center;
-    padding: 7px 16px 6px; flex-shrink: 0; position: relative;
-    margin: 8px 8px 0; border-radius: 8px;
+    padding: 3px 16px 3px; flex-shrink: 0; position: relative;
+    margin: 4px 4px 0; border-radius: 8px;
   }
   .title-bar h1 { font-size: 14px; font-weight: 400; color: #578E48; letter-spacing: 0; text-align: center; }
   .title-settings-btn {
@@ -62,7 +62,7 @@ const css = `
   /* ── TOP BAR ── */
   .top-bar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 2px 6px 8px; flex-shrink: 0;
+    padding: 0 6px 5px; flex-shrink: 0;
   }
   .icon-btn {
     background: none; border: none; color: #007aff; font-size: 22px;
@@ -80,18 +80,18 @@ const css = `
   .panels {
     display: grid; grid-template-columns: 1fr 1fr;
     flex: 1; min-height: 0;
-    padding: 20px 20px 0; gap: 34px;
+    padding: 6px 12px 0; gap: 26px;
   }
   @media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
   .panel {
     background: #ffffff;
-    padding: 10px 18px 14px;
+    padding: 6px 14px 8px;
     display: flex; flex-direction: column; gap: 0;
     border: 1px solid #d0d0d5; border-radius: 10px;
     overflow-y: auto; min-height: 0;
   }
   /* No row dividers — the real app's panels are clean white with spacing only. */
-  .srow { display: flex; flex-direction: column; align-items: center; padding: 8px 0 7px; gap: 5px; }
+  .srow { display: flex; flex-direction: column; align-items: center; padding: 4px 0 3px; gap: 3px; }
   .lbl { font-size: 13px; font-weight: 400; color: #000; text-align: center; line-height: 1.3; }
   .sublbl { font-size: 11px; color: #8e8e93; text-align: center; margin-top: -2px; }
   .val { font-size: 15px; color: #007aff; text-align: center; }
@@ -114,7 +114,7 @@ const css = `
   }
   .step-divider { width: 1px; background: rgba(0,0,0,0.10); flex-shrink: 0; margin: 5px 0; }
   .step-btn:active { background: rgba(0,0,0,0.08); }
-  .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; padding: 6px 0 4px; width: 100%; }
+  .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; padding: 4px 0 2px; width: 100%; }
   .toggle-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .toggle-lbl { font-size: 12px; color: #000; text-align: center; line-height: 1.2; }
   .ios-toggle { position: relative; width: 44px; height: 26px; display: block; }
@@ -168,9 +168,9 @@ const css = `
   .bottom-bar {
     background: #ffffff;
     border: 1px solid #d0d0d5;
-    margin: 20px;
+    margin: 6px 12px 10px;
     border-radius: 10px;
-    padding: 8px 16px 10px;
+    padding: 6px 16px 8px;
     /* Three tracks with equal 1fr outers, so the middle block sits at true
        centre whether or not the speeds column has content. */
     display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
