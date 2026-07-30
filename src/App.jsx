@@ -564,16 +564,18 @@ function A32FLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
         <Seg options={fleet.flapOptions} value={s.flap} onChange={set("flap")} />
       </div>
       <div className="srow">
-        <div className="lbl">Brake Mode</div>
+        <div className="lbl">Brakes</div>
         <Seg options={fleet.brakeModeOptions} value={s.brakeMode} onChange={set("brakeMode")} />
       </div>
       <div className="srow">
-        <div className="lbl">Operative Thrust Reversers</div>
+        <div className="lbl">Thrust Reversers</div>
         <Seg options={fleet.reverserOptions} value={s.reversers} onChange={set("reversers")} />
       </div>
+      {/* VAPP is a three-way choice, not a stepper — the tables only publish
+          corrections at VLS+10 and VLS+15. */}
       <div className="srow">
-        <div className="val">VAPP = VLS+{s.vappAdditive}</div>
-        <Stepper value={s.vappAdditive} onChange={set("vappAdditive")} step={5} min={5} max={30} />
+        <div className="lbl">VAPP</div>
+        <Seg options={fleet.vappOptions} value={s.vappAdditive} onChange={set("vappAdditive")} />
       </div>
       <div className="srow">
         <div className="lbl">Landing Weight</div>
@@ -754,20 +756,30 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
       )}
       {fleet.showShortRunway && (
         <div className="srow">
-          <div className="lbl">Short Runway Station</div>
-          <div className="short-row">
-            <Toggle checked={!!s.shortRwyStation} onChange={set("shortRwyStation")} />
-            {s.shortRwyStation && stations.length > 0 ? (
-              <TapInput
-                value={s.shortRwyId ?? stations[0].value}
-                onChange={set("shortRwyId")}
-                options={stations}
-              />
-            ) : (
-              <span className="short-none">None</span>
-            )}
-          </div>
-          {s.shortRwyStation && !hasSpecialData(s.shortRwyId ?? stations[0]?.value) && (
+          <div className="lbl">{fleet.shortRunwayLabel ?? "Short Runway Station"}</div>
+          {/* A32F presents this as a plain value list with "None" as the first
+              entry; the Embraer fleets front it with a toggle. */}
+          {fleet.shortRunwayAsList ? (
+            <TapInput
+              value={s.shortRwyId ?? "none"}
+              onChange={set("shortRwyId")}
+              options={[{ value: "none", label: "None" }, ...stations]}
+            />
+          ) : (
+            <div className="short-row">
+              <Toggle checked={!!s.shortRwyStation} onChange={set("shortRwyStation")} />
+              {s.shortRwyStation && stations.length > 0 ? (
+                <TapInput
+                  value={s.shortRwyId ?? stations[0].value}
+                  onChange={set("shortRwyId")}
+                  options={stations}
+                />
+              ) : (
+                <span className="short-none">None</span>
+              )}
+            </div>
+          )}
+          {(s.shortRwyId && s.shortRwyId !== "none") && !hasSpecialData(s.shortRwyId) && (
             <div className="short-warn">
               Special table data not loaded for this station. Normal in-flight data
               is not valid here — refer to the AOM or the iPad Land App.
@@ -836,7 +848,7 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
           <div className="bot-type">{acLabel}</div>
           <button className="bot-btn">Audit</button>
         </div>
-        {climbNote && (
+        {climbNote && fleet.showClimbLimited !== false && (
           <>
             <div className="bot-note">{climbNote}</div>
             <div className="bot-sub">Climb Limited Max Landing Weight (for Dispatch Purposes Only)</div>

@@ -24,8 +24,8 @@ import { calcSNA } from "./calc-short-runway.js";
 
 export const a321Config = {
   id: "a321",
-  label: "A321 IAE/CFM",
-  title: "A321 IAE/CFM56 In-Flight Normal Landing Distance",
+  label: "A321 (IAE, CFM-56)",
+  title: "Airbus A32F In-Flight Normal Landing Distance",
   maxWeight: 205000,
 
   defaults: {
@@ -47,9 +47,11 @@ export const a321Config = {
   // Distance tables are gridded 140–205k lb; MLW is 171.5k lb.
   weightLimits: { min: 110000, max: 205000, step: 1000 },
   flapOptions:      [{ value: "CONF 3", label: "3" }, { value: "CONF FULL", label: "Full" }],
-  brakeModeOptions: [{ value: "MAX_MAN", label: "Max Manual" }, { value: "MED", label: "MED Auto" }, { value: "LOW", label: "LOW Auto" }],
-  // AOM 16p.16: Operative Thrust Reversers is 0, Both or 1. See note in calculate().
-  reverserOptions:  [{ value: "0", label: "0" }, { value: "1", label: "1" }, { value: "Both", label: "Both" }],
+  brakeModeOptions: [{ value: "MAX_MAN", label: "Manual" }, { value: "MED", label: "Auto MED" }, { value: "LOW", label: "Auto LO" }],
+  reverserOptions:  [{ value: "Both", label: "Both" }, { value: "None", label: "None" }],
+  // The tables publish corrections only at VLS+10 and VLS+15, so the real app
+  // offers three fixed choices rather than a free stepper.
+  vappOptions: [{ value: 5, label: "VLS+5" }, { value: 10, label: "VLS+10" }, { value: 15, label: "VLS+15" }],
   brakingOptions: [
     { value: 6, label: "6 - Dry",      surface: "dry"  },
     { value: 5, label: "5 - Good",     surface: "dry"  },
@@ -65,8 +67,11 @@ export const a321Config = {
     { key: "s",    label: "S",    color: "#ff9500" },
     { key: "o",    label: "O",    color: "#8e8e93" },
   ],
-  toggles: ["autothrust", "autoland", "iceAccretion"],
+  toggles: ["iceAccretion", "autoland"],
   showShortRunway: true,
+  shortRunwayLabel: "Short Runways",
+  shortRunwayAsList: true,
+  showClimbLimited: false,
   // AOM 12p.5.8 — four station groups, each with its own IAE/CFM-56 table set.
   shortRunwayStations: [
     { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },
@@ -110,7 +115,7 @@ export const a321Config = {
     // A special station replaces the normal result entirely — the AOM directs its
     // table be used "in lieu of" the normal data, so the normal distance must not
     // be presented alongside it.
-    const special = s.shortRwyStation
+    const special = (s.shortRwyId && s.shortRwyId !== "none")
       ? calcSNA({
           station:        s.shortRwyId,
           typeKey:        "a321",
