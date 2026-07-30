@@ -35,8 +35,8 @@ const css = `
     padding: 4px 10px 6px;
   }
   .card {
-    background: #9B9B9B;
-    border: 1px solid #888888;
+    background: #8A8A8A;
+    border: 1px solid #757575;
     border-radius: 12px;
     overflow: hidden;
     flex: 1;
@@ -80,7 +80,9 @@ const css = `
   .panels {
     display: grid; grid-template-columns: 1fr 1fr;
     flex: 1; min-height: 0;
-    padding: 6px 12px 0; gap: 26px;
+    /* padding-bottom lifts the panels clear of the bottom bar so the grey card
+       shows through beneath them, as in the real app. */
+    padding: 6px 14px 22px; gap: 26px;
   }
   @media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
   .panel {
@@ -168,9 +170,9 @@ const css = `
   .bottom-bar {
     background: #ffffff;
     border: 1px solid #d0d0d5;
-    margin: 6px 12px 10px;
+    margin: 0 14px 14px;
     border-radius: 10px;
-    padding: 6px 16px 8px;
+    padding: 16px 20px 18px;
     /* Three tracks with equal 1fr outers, so the middle block sits at true
        centre whether or not the speeds column has content. */
     display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
@@ -181,7 +183,7 @@ const css = `
   .spd-num { font-size: clamp(26px, 4vw, 36px); font-weight: 300; line-height: 1; }
   .spd-lbl { font-size: 10px; color: #8e8e93; margin-top: 2px; letter-spacing: 0.2px; text-transform: uppercase; }
   .bottom-mid { justify-self: center; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
-  .bot-actions { display: flex; gap: 20px; align-items: center; }
+  .bot-actions { display: flex; gap: 56px; align-items: center; }
   .bot-btn { background: none; border: none; color: #007aff; font-size: 14px; font-family: inherit; cursor: pointer; }
   .bot-btn:active { opacity: 0.5; }
   .bot-type { font-size: 16px; font-weight: 700; color: #578E48; }
@@ -1010,7 +1012,6 @@ export default function App() {
         <div className="card">
           <div className="title-bar">
             <h1>{titleText}</h1>
-            <button className="title-settings-btn" onClick={() => setShowFleet(true)}>⚙︎</button>
           </div>
 
           <div className="panels">
