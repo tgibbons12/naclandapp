@@ -49,10 +49,10 @@ const css = `
   .title-bar {
     background: #E4E3EA;
     display: flex; align-items: center; justify-content: center;
-    padding: 6px 13px 6px; flex-shrink: 0; position: relative;
+    padding: 3px 16px 3px; flex-shrink: 0; position: relative;
     margin: 4px 4px 0; border-radius: 8px;
   }
-  .title-bar h1 { font-size: 17px; font-weight: 400; color: #578E48; letter-spacing: 0; text-align: center; }
+  .title-bar h1 { font-size: 14px; font-weight: 400; color: #578E48; letter-spacing: 0; text-align: center; }
   .title-settings-btn {
     background: none; border: none; color: #007aff; font-size: 20px;
     cursor: pointer; padding: 0 4px; line-height: 1; font-family: inherit;
@@ -82,7 +82,7 @@ const css = `
     flex: 1; min-height: 0;
     /* padding-bottom lifts the panels clear of the bottom bar so the grey card
        shows through beneath them, as in the real app. */
-    padding: 0 14px 56px; gap: 38px;
+    padding: 6px 14px 56px; gap: 38px;
   }
   @media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
   .panel {
