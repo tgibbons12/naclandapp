@@ -82,7 +82,7 @@ const css = `
     flex: 1; min-height: 0;
     /* padding-bottom lifts the panels clear of the bottom bar so the grey card
        shows through beneath them, as in the real app. */
-    padding: 6px 14px 22px; gap: 26px;
+    padding: 6px 14px 56px; gap: 38px;
   }
   @media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
   .panel {
@@ -172,7 +172,7 @@ const css = `
     border: 1px solid #d0d0d5;
     margin: 0 14px 14px;
     border-radius: 10px;
-    padding: 16px 20px 18px;
+    padding: 12px 20px 14px;
     /* Three tracks with equal 1fr outers, so the middle block sits at true
        centre whether or not the speeds column has content. */
     display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
