@@ -4,6 +4,7 @@ import {
   A320_ANTI_ICE,
   lookupA319Speeds,
 } from "./calc.js";
+import { MEL_PENALTY_OPTIONS } from "./limits.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A320
@@ -34,6 +35,8 @@ export const a320Config = {
     autoland:        false,
     iceAccretion:    false,
     shortRwyStation: false,
+    shortRwyId:      "none",
+    melPenaltyFt:    0,
     pressureAlt:   1000,
     oatC:          24,
     headwind:      5,
@@ -66,6 +69,8 @@ export const a320Config = {
   shortRunwayLabel: "Short Runways",
   shortRunwayAsList: true,
   showClimbLimited: false,
+  showCrosswindLimit: true,
+  melOptions: MEL_PENALTY_OPTIONS,
   // AOM 12p.5.5 — two station groups carry special inflight landing data for the A320.
   shortRunwayStations: [
     { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },

@@ -5,6 +5,7 @@ import {
   A321_ANTI_ICE,
 } from "./calc.js";
 import { calcSNA } from "./calc-short-runway.js";
+import { MEL_PENALTY_OPTIONS } from "./limits.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A321 IAE/CFM-56
@@ -38,6 +39,8 @@ export const a321Config = {
     autoland:        false,
     iceAccretion:    false,
     shortRwyStation: false,
+    shortRwyId:      "none",
+    melPenaltyFt:    0,
     pressureAlt:   1000,
     oatC:          24,
     headwind:      5,
@@ -72,6 +75,8 @@ export const a321Config = {
   shortRunwayLabel: "Short Runways",
   shortRunwayAsList: true,
   showClimbLimited: false,
+  showCrosswindLimit: true,
+  melOptions: MEL_PENALTY_OPTIONS,
   // AOM 12p.5.8 — four station groups, each with its own IAE/CFM-56 table set.
   shortRunwayStations: [
     { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },

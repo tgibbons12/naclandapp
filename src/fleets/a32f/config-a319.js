@@ -1,4 +1,5 @@
 import { calcA319, lookupA319Speeds, lookupClimbLimited } from "./calc.js";
+import { MEL_PENALTY_OPTIONS } from "./limits.js";
 
 // A319 anti-ice / ice accretion corrections, from the two climb-limited pages in
 // AOM 12p.3.2. Like the other A32F types these vary by landing configuration.
@@ -27,6 +28,8 @@ export const a319Config = {
     autoland:        false,
     iceAccretion:    false,
     shortRwyStation: false,
+    shortRwyId:      "none",
+    melPenaltyFt:    0,
     pressureAlt:   1000,
     oatC:          24,
     headwind:      5,
@@ -58,6 +61,8 @@ export const a319Config = {
   shortRunwayLabel: "Short Runways",
   shortRunwayAsList: true,
   showClimbLimited: false,
+  showCrosswindLimit: true,
+  melOptions: MEL_PENALTY_OPTIONS,
   // AOM 12p.5.3 — six station groups carry special inflight landing data for the A319.
   shortRunwayStations: [
     { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },

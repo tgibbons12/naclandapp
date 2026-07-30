@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { FLEETS, FAMILY_LIST } from "./lib/fleetRegistry.js";
 import { hasSpecialData } from "./fleets/a32f/calc-short-runway.js";
+import { landingCrosswindLimit } from "./fleets/a32f/limits.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RCAM DATA
@@ -44,10 +45,12 @@ const css = `
     min-height: 0;
     box-shadow: 0 1px 8px rgba(0,0,0,0.18);
   }
+  /* Inset rounded pill inside the grey card, not a flush edge-to-edge strip. */
   .title-bar {
     background: #E4E3EA;
     display: flex; align-items: center; justify-content: center;
     padding: 7px 16px 6px; flex-shrink: 0; position: relative;
+    margin: 8px 8px 0; border-radius: 8px;
   }
   .title-bar h1 { font-size: 14px; font-weight: 400; color: #578E48; letter-spacing: 0; text-align: center; }
   .title-settings-btn {
@@ -56,11 +59,28 @@ const css = `
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   }
   .title-settings-btn:active { opacity: 0.5; }
+  /* ── TOP BAR ── */
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 2px 6px 8px; flex-shrink: 0;
+  }
+  .icon-btn {
+    background: none; border: none; color: #007aff; font-size: 22px;
+    cursor: pointer; padding: 0 6px; line-height: 1; font-family: inherit;
+  }
+  .icon-btn:active { opacity: 0.5; }
+  .mode-seg { display: inline-flex; background: rgba(118,118,128,0.12); border-radius: 10px; padding: 3px; }
+  .mode-btn {
+    background: transparent; border: none; border-radius: 8px;
+    font-size: 16px; color: #3c3c43; padding: 5px 20px;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .mode-btn.active { background: #ffffff; color: #007aff; box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
   /* Wide grey bezel around and between the panels, as in the real app. */
   .panels {
     display: grid; grid-template-columns: 1fr 1fr;
     flex: 1; min-height: 0;
-    padding: 14px 14px 0; gap: 26px;
+    padding: 20px 20px 0; gap: 34px;
   }
   @media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
   .panel {
@@ -148,7 +168,7 @@ const css = `
   .bottom-bar {
     background: #ffffff;
     border: 1px solid #d0d0d5;
-    margin: 14px;
+    margin: 20px;
     border-radius: 10px;
     padding: 8px 16px 10px;
     /* Three tracks with equal 1fr outers, so the middle block sits at true
@@ -168,7 +188,9 @@ const css = `
   .bot-note { font-size: 11px; color: #578E48; text-align: center; font-weight: 400; }
   .bot-sub { font-size: 10px; color: #8e8e93; text-align: center; }
   .dist-block { display: flex; flex-direction: column; align-items: flex-end; justify-self: end; }
-  .dist-num { font-size: clamp(28px, 4.5vw, 40px); font-weight: 400; color: #000; line-height: 1; white-space: nowrap; }
+  /* Green by default; red only when the figure exceeds LDA at a short runway
+     station, or on the non-normal page. */
+  .dist-num { font-size: clamp(28px, 4.5vw, 40px); font-weight: 400; color: #578E48; line-height: 1; white-space: nowrap; }
   .dist-lbl { font-size: 11px; color: #8e8e93; text-align: right; margin-top: 2px; }
   .dist-num.nn { color: #c0392b; }
   /* ── TAB BAR ── */
@@ -564,12 +586,12 @@ function A32FLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantCha
         <Seg options={fleet.flapOptions} value={s.flap} onChange={set("flap")} />
       </div>
       <div className="srow">
-        <div className="lbl">Brakes</div>
-        <Seg options={fleet.brakeModeOptions} value={s.brakeMode} onChange={set("brakeMode")} />
-      </div>
-      <div className="srow">
         <div className="lbl">Thrust Reversers</div>
         <Seg options={fleet.reverserOptions} value={s.reversers} onChange={set("reversers")} />
+      </div>
+      <div className="srow">
+        <div className="lbl">Brakes</div>
+        <Seg options={fleet.brakeModeOptions} value={s.brakeMode} onChange={set("brakeMode")} />
       </div>
       {/* VAPP is a three-way choice, not a stepper — the tables only publish
           corrections at VLS+10 and VLS+15. */}
@@ -714,10 +736,10 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
         <TapInput
           value={s.pressureAlt}
           onChange={set("pressureAlt")}
-          step={500} min={-2000} max={14000}
+          step={100} min={-2000} max={14000}
           display={s.pressureAlt.toLocaleString()}
         />
-        <Stepper value={s.pressureAlt} onChange={set("pressureAlt")} step={500} min={-2000} max={14000} />
+        <Stepper value={s.pressureAlt} onChange={set("pressureAlt")} step={100} min={-2000} max={14000} />
       </div>
       <div className="srow">
         <div className="lbl">OAT° C</div>
@@ -744,9 +766,27 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
           <Stepper value={s.brakingAction} onChange={set("brakingAction")} step={1} min={1} max={6} />
         </div>
       )}
+      {!isERJ && fleet.showCrosswindLimit && (
+        <div className="srow">
+          <div className="lbl">
+            Rwy Cond Code Max X-wind:{" "}
+            <span style={{fontWeight: 500}}>{landingCrosswindLimit(s.brakingAction) ?? "—"}</span>
+          </div>
+        </div>
+      )}
       {!isERJ && (
         <div className="srow">
           <button className="rcam-btn" onClick={onShowRCAM}>Runway Condition Assessment Matrix</button>
+        </div>
+      )}
+      {fleet.melOptions && (
+        <div className="srow">
+          <div className="lbl">MEL Landing Penalty Factor</div>
+          <TapInput
+            value={s.melPenaltyFt ?? 0}
+            onChange={set("melPenaltyFt")}
+            options={fleet.melOptions}
+          />
         </div>
       )}
       {fleet.macg && (
@@ -795,7 +835,9 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
 // BOTTOM BAR
 // ─────────────────────────────────────────────────────────────────────────────
 function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
-  const primaryDist = result ? (result.primaryDist ?? result.distances?.MAX_MAN) : null;
+  const baseDist = result ? (result.primaryDist ?? result.distances?.MAX_MAN) : null;
+  // An MEL/CDL usable-landing-length penalty adds directly to the required length.
+  const primaryDist = baseDist != null ? baseDist + (s.melPenaltyFt ?? 0) : null;
   const climbNote = result && !isNonNormal
     ? result.climbLimitedKlbs != null
       ? `${Math.round(result.climbLimitedKlbs * 1000).toLocaleString()}`
@@ -843,9 +885,9 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
         ))}
       </div>
       <div className="bottom-mid">
+        <div className="bot-type">{acLabel}</div>
         <div className="bot-actions">
           <button className="bot-btn" onClick={onReset}>Reset</button>
-          <div className="bot-type">{acLabel}</div>
           <button className="bot-btn">Audit</button>
         </div>
         {climbNote && fleet.showClimbLimited !== false && (
@@ -859,7 +901,7 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
         <div className={`dist-num${isNonNormal || special?.tooShort || special?.exceedsLDA ? " nn" : ""}`}>
           {special?.tooShort
             ? "TOO SHORT"
-            : primaryDist != null ? `${primaryDist.toLocaleString()} feet` : "— feet"}
+            : primaryDist != null ? `${primaryDist} feet` : "— feet"}
         </div>
         <div className="dist-lbl">
           {special
@@ -950,6 +992,21 @@ export default function App() {
     <>
       <style>{css}</style>
       <div className="shell">
+        {/* Top chrome: info button, Normal/Non-Normal segmented pill, page icon. */}
+        <div className="top-bar">
+          <button className="icon-btn" aria-label="Info">ⓘ</button>
+          <div className="mode-seg">
+            <button
+              className={`mode-btn${activeTab === "normal" ? " active" : ""}`}
+              onClick={() => setActiveTab("normal")}
+            >Normal</button>
+            <button
+              className={`mode-btn${activeTab === "nonnormal" ? " active" : ""}`}
+              onClick={() => setActiveTab("nonnormal")}
+            >Non-Normal</button>
+          </div>
+          <button className="icon-btn" aria-label="Pages" onClick={() => setShowFleet(true)}>☰</button>
+        </div>
         <div className="card">
           <div className="title-bar">
             <h1>{titleText}</h1>
@@ -1003,18 +1060,6 @@ export default function App() {
           />
         </div>
 
-        <div className="tab-bar">
-          <button className="tab" onClick={() => setActiveTab("normal")}>
-            <svg className="tab-plane" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
-            <span className={`tab-lbl${activeTab === "normal" ? " on" : ""}`}>Normal</span>
-            {activeTab === "normal" && <div className="tab-bar-indicator" />}
-          </button>
-          <button className="tab" onClick={() => setActiveTab("nonnormal")}>
-            <svg className="tab-plane" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style={{opacity: activeTab === "nonnormal" ? 1 : 0.35}}><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
-            <span className={`tab-lbl${activeTab === "nonnormal" ? " on" : ""}`}>Non-Normal</span>
-            {activeTab === "nonnormal" && <div className="tab-bar-indicator" />}
-          </button>
-        </div>
       </div>
 
       {showRCAM  && <RCAMModal onClose={() => setShowRCAM(false)} />}

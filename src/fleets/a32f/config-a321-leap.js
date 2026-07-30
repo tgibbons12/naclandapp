@@ -5,6 +5,7 @@ import {
   lookupA321Speeds,
 } from "./calc.js";
 import { calcSNA } from "./calc-short-runway.js";
+import { MEL_PENALTY_OPTIONS } from "./limits.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A321 LEAP-1A  (A321-253NX)
@@ -39,6 +40,8 @@ export const a321LeapConfig = {
     autoland:        false,
     iceAccretion:    false,
     shortRwyStation: false,
+    shortRwyId:      "none",
+    melPenaltyFt:    0,
     pressureAlt:   1000,
     oatC:          24,
     headwind:      5,
@@ -71,6 +74,8 @@ export const a321LeapConfig = {
   shortRunwayLabel: "Short Runways",
   shortRunwayAsList: true,
   showClimbLimited: false,
+  showCrosswindLimit: true,
+  melOptions: MEL_PENALTY_OPTIONS,
   // AOM 12p.5.8 — same four station groups as the ceo, with A321NA/A321NX tables.
   shortRunwayStations: [
     { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },
