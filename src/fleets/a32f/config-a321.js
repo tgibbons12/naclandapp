@@ -4,7 +4,7 @@ import {
   lookupA321ClimbLimited,
   A321_ANTI_ICE,
 } from "./calc.js";
-import { calcSNA } from "./calc-short-runway.js";
+import { calcSpecial } from "./calc-special.js";
 import { MEL_PENALTY_OPTIONS } from "./limits.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,18 +120,17 @@ export const a321Config = {
     // A special station replaces the normal result entirely — the AOM directs its
     // table be used "in lieu of" the normal data, so the normal distance must not
     // be presented alongside it.
-    const special = (s.shortRwyId && s.shortRwyId !== "none")
-      ? calcSNA({
-          station:        s.shortRwyId,
-          typeKey:        "a321",
-          brakeMode:      s.brakeMode,
-          weightLbs:      s.landingWeight,
-          oatC:           s.oatC,
-          headwind:       s.headwind,
-          vappAdditive:   s.vappAdditive,
-          brakingAction:  s.brakingAction,
-        })
-      : null;
+    const special = calcSpecial({
+      station:       s.shortRwyId,
+      typeKey:       "a321",
+      brakeMode:     s.brakeMode,
+      weightLbs:     s.landingWeight,
+      oatC:          s.oatC,
+      headwind:      s.headwind,
+      vappAdditive:  s.vappAdditive,
+      brakingAction: s.brakingAction,
+      reversers:     s.reversers,
+    });
 
     return {
       speeds: { vls, vapp, f: speeds.F, s: speeds.S, o: speeds.O },
@@ -139,7 +138,7 @@ export const a321Config = {
       climbLimitedKlbs,
       special,
       primaryDist: special
-        ? (special.tooShort ? null : special.requiredFt)
+        ? (special.requiredFt ?? null)
         : (distances ? distances[s.brakingAction] : null),
     };
   },

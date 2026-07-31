@@ -4,6 +4,7 @@ import {
   A320_ANTI_ICE,
   lookupA319Speeds,
 } from "./calc.js";
+import { calcSpecial } from "./calc-special.js";
 import { MEL_PENALTY_OPTIONS } from "./limits.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -109,11 +110,28 @@ export const a320Config = {
       climbLimitedKlbs = climbLimitedKlbs - corr / 1000;
     }
 
+    // A special station replaces the normal result entirely — the AOM directs its
+    // table be used "in lieu of" the normal data.
+    const special = calcSpecial({
+      station:       s.shortRwyId,
+      typeKey:       "a320",
+      brakeMode:     s.brakeMode,
+      weightLbs:     s.landingWeight,
+      oatC:          s.oatC,
+      headwind:      s.headwind,
+      vappAdditive:  s.vappAdditive,
+      brakingAction: s.brakingAction,
+      reversers:     s.reversers,
+    });
+
     return {
       speeds: { vls, vapp, f: speeds.F, s: speeds.S, o: speeds.O },
       distances,
       climbLimitedKlbs,
-      primaryDist: distances ? distances[s.brakingAction] : null,
+      special,
+      primaryDist: special
+        ? (special.requiredFt ?? null)
+        : (distances ? distances[s.brakingAction] : null),
     };
   },
 };

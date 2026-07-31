@@ -1,4 +1,5 @@
 import { calcA319, lookupA319Speeds, lookupClimbLimited } from "./calc.js";
+import { calcSpecial } from "./calc-special.js";
 import { MEL_PENALTY_OPTIONS } from "./limits.js";
 
 // A319 anti-ice / ice accretion corrections, from the two climb-limited pages in
@@ -63,12 +64,15 @@ export const a319Config = {
   showClimbLimited: false,
   showCrosswindLimit: true,
   melOptions: MEL_PENALTY_OPTIONS,
-  // AOM 12p.5.3 — six station groups carry special inflight landing data for the A319.
+  // AOM 12p.5.3 — six station groups carry special inflight landing data for the
+  // A319. PEI is split by runway end: the AOM's Rwy 26 adder runs to +649 ft, far
+  // too large to fold into a single combined entry either way.
   shortRunwayStations: [
     { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },
     { value: "dca-15-33",   label: "DCA 15/33" },
     { value: "jac-01-19",   label: "JAC 01/19" },
-    { value: "pei-08-26",   label: "PEI 08/26" },
+    { value: "pei-08",      label: "PEI 08" },
+    { value: "pei-26",      label: "PEI 26" },
     { value: "eyw-09-27",   label: "EYW 09/27" },
     { value: "sbp-11-29",   label: "SBP 11/29" },
   ],
@@ -97,11 +101,28 @@ export const a319Config = {
 
     let climbLimitedKlbs = lookupClimbLimited(confFull, s.pressureAlt, s.oatC);
 
+    // A special station replaces the normal result entirely — the AOM directs its
+    // table be used "in lieu of" the normal data.
+    const special = calcSpecial({
+      station:       s.shortRwyId,
+      typeKey:       "a319",
+      brakeMode:     s.brakeMode,
+      weightLbs:     s.landingWeight,
+      oatC:          s.oatC,
+      headwind:      s.headwind,
+      vappAdditive:  s.vappAdditive,
+      brakingAction: s.brakingAction,
+      reversers:     s.reversers,
+    });
+
     return {
       speeds: { vls, vapp, f: speeds.F, s: speeds.S, o: speeds.O },
       distances,
       climbLimitedKlbs,
-      primaryDist: distances ? distances[s.brakingAction] : null,
+      special,
+      primaryDist: special
+        ? (special.requiredFt ?? null)
+        : (distances ? distances[s.brakingAction] : null),
     };
   },
 };

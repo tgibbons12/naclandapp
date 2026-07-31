@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { FLEETS, FAMILY_LIST } from "./lib/fleetRegistry.js";
-import { hasSpecialData } from "./fleets/a32f/calc-short-runway.js";
+import { hasSpecialData } from "./fleets/a32f/calc-special.js";
 import { landingCrosswindLimit } from "./fleets/a32f/limits.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -873,6 +873,18 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
   // When a special-station table is in play it replaces the normal result, and the
   // readout switches from "landing distance" to "required runway length vs LDA".
   const special = result?.special ?? null;
+  // Several station groups (BOS/LGA/DCA, PEI) cover multiple airports or publish
+  // no shading, so they carry no single LDA — the readout then simply states the
+  // required length and leaves the comparison to the crew.
+  const specialLabel = (sp) => {
+    if (sp.tooShort)      return "Runway too short for landing";
+    if (sp.notAuthorized) return sp.reason;
+    if (sp.noData)        return "No data for this brake mode / Rwy Cond Code";
+    if (sp.ldaFt == null) return "Required Runway Landing Length";
+    return sp.exceedsLDA
+      ? `Required — exceeds LDA ${sp.ldaFt.toLocaleString()} ft`
+      : `Required Runway Landing Length (LDA ${sp.ldaFt.toLocaleString()} ft)`;
+  };
   const speedSlots = (() => {
     if (fleet.id?.startsWith("b737")) {
       let vrefKey, vrefLabel;
@@ -919,19 +931,16 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
         )}
       </div>
       <div className="dist-block">
-        <div className={`dist-num${isNonNormal || special?.tooShort || special?.exceedsLDA ? " nn" : ""}`}>
-          {special?.tooShort
-            ? "TOO SHORT"
+        <div className={`dist-num${
+          isNonNormal || special?.tooShort || special?.notAuthorized || special?.exceedsLDA ? " nn" : ""
+        }`}>
+          {special?.tooShort ? "TOO SHORT"
+            : special?.notAuthorized ? "NOT AUTH"
+            : special?.noData ? "NO DATA"
             : primaryDist != null ? `${primaryDist} feet` : "— feet"}
         </div>
         <div className="dist-lbl">
-          {special
-            ? (special.tooShort
-                ? "Runway too short for landing"
-                : special.exceedsLDA
-                  ? `Required — exceeds LDA ${special.ldaFt.toLocaleString()} ft`
-                  : `Required Runway Landing Length (LDA ${special.ldaFt.toLocaleString()} ft)`)
-            : "Landing Distance"}
+          {special ? specialLabel(special) : "Landing Distance"}
         </div>
       </div>
     </div>
