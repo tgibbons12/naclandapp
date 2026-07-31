@@ -62,7 +62,7 @@ const css = `
   /* ── TOP BAR ── */
   .top-bar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 6px 5px; flex-shrink: 0;
+    padding: 10px 6px 4px; flex-shrink: 0;
   }
   .icon-btn {
     background: none; border: none; color: #007aff; font-size: 22px;
@@ -70,13 +70,20 @@ const css = `
     display: inline-flex; align-items: center;
   }
   .icon-btn:active { opacity: 0.5; }
-  .mode-seg { display: inline-flex; background: rgba(118,118,128,0.12); border-radius: 10px; padding: 3px; }
+  /* Capsule, not a rounded rectangle: the real app's mode switch is a fully
+     rounded outlined pill, with the active half filled a pale blue. */
+  .mode-seg {
+    display: inline-flex; background: #ffffff;
+    border: 1px solid rgba(60,60,67,0.28);
+    border-radius: 999px; padding: 2px; overflow: hidden;
+  }
   .mode-btn {
-    background: transparent; border: none; border-radius: 8px;
-    font-size: 16px; color: #3c3c43; padding: 5px 20px;
+    background: transparent; border: none; border-radius: 999px;
+    font-size: 17px; color: #000; padding: 6px 22px;
     cursor: pointer; font-family: inherit; white-space: nowrap;
   }
-  .mode-btn.active { background: #ffffff; color: #007aff; box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+  .mode-btn.active { background: #E4EEF7; color: #007aff; }
+  .mode-btn:not(.active):active { background: rgba(0,0,0,0.05); }
   /* Wide grey bezel around and between the panels, as in the real app. */
   .panels {
     display: grid; grid-template-columns: 1fr 1fr;
@@ -141,7 +148,10 @@ const css = `
   .rcam-btn:active { opacity: 0.5; }
   .calc-btn { background: none; border: none; color: #007aff; font-size: 15px; font-family: inherit; cursor: pointer; padding: 4px 6px; white-space: nowrap; flex-shrink: 0; }
   .calc-btn:active { opacity: 0.5; }
-  .hw-row { display: flex; align-items: center; gap: 10px; }
+  /* The stepper stays centred in the column like every other one; Calculate is
+     pinned out to the right rather than shifting the stepper off centre. */
+  .hw-row { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; }
+  .hw-row .calc-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
   .short-row { display: flex; align-items: center; gap: 10px; justify-content: center; }
   .short-none { font-size: 14px; color: #8e8e93; }
   .short-warn { font-size: 10.5px; color: #c0392b; text-align: center; line-height: 1.35; max-width: 260px; margin-top: 2px; }
@@ -1006,10 +1016,12 @@ export default function App() {
         {/* Top chrome: info button, Normal/Non-Normal segmented pill, page icon. */}
         <div className="top-bar">
           <button className="icon-btn" aria-label="Info">
-            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.4">
-              <circle cx="13" cy="13" r="10.5" />
-              <circle cx="13" cy="8.2" r="0.9" fill="currentColor" stroke="none" />
-              <path d="M13 11.4v7.2" strokeLinecap="round" />
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+              <circle cx="13" cy="13" r="10.5" stroke="currentColor" strokeWidth="1.4" />
+              <text
+                x="13" y="18.6" textAnchor="middle" fill="currentColor" stroke="none"
+                fontFamily="Georgia, 'Times New Roman', serif" fontStyle="italic" fontSize="15"
+              >i</text>
             </svg>
           </button>
           <div className="mode-seg">
