@@ -72,10 +72,14 @@ export const a320Config = {
   showClimbLimited: false,
   showCrosswindLimit: true,
   melOptions: MEL_PENALTY_OPTIONS,
-  // AOM 12p.5.5 — two station groups carry special inflight landing data for the A320.
+  // AOM 12p.5.5 — two station groups carry special inflight landing data for the
+  // A320. The BOS/LGA/DCA group shares one table across three airports with
+  // different LDAs, so it is listed per field.
   shortRunwayStations: [
-    { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },
-    { value: "dca-15-33",   label: "DCA 15/33" },
+    { value: "bos-27",    label: "BOS 27" },
+    { value: "lga",       label: "LGA (all runways)" },
+    { value: "dca-01-19", label: "DCA 01/19" },
+    { value: "dca-15-33", label: "DCA 15/33" },
   ],
   showCatII: false,
   showBrakeMode: true,

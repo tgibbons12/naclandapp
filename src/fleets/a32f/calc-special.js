@@ -164,8 +164,8 @@ const BOS_LEAP = {
 // ─────────────────────────────────────────────────────────────────────────────
 // DCA Runway 15/33  —  Max Manual braking, basis DRY (6) / GOOD (5)
 // Touchdown in first 1000 ft. RCC 4 or less is "too short for landing".
-// LDA 5204 ft, confirmed from the A321 IAE/CFM chart's shading boundary
-// (5139 ft unshaded, 5208 ft shaded) and DCA 15/33's published length.
+// LDA 5204 ft (crew-supplied), consistent with the A321 IAE/CFM chart's shading
+// boundary of 5139 ft unshaded / 5208 ft shaded.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DCA_A319 = {
@@ -271,7 +271,8 @@ const DCA_LEAP = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// JAC Runway 01/19 (A319 only) — touchdown in first 1000 ft, LDA 6300 ft.
+// JAC Runway 01/19 (A319 only) — touchdown in first 1000 ft, LDA 6300 ft
+// (crew-confirmed; matches the 6295/6328 shading boundary).
 // RCC 6/5 use MED autobrake (max manual permitted); RCC 3 is max manual only.
 // Distinctive: this is the one station that publishes a HEADWIND credit, forbids
 // tailwind on the MEDIUM table outright, and forbids no-reverse operation.
@@ -375,8 +376,8 @@ const PEI_08 = PEI_BASE;
 const PEI_26 = { ...PEI_BASE, rwyAdd: { 6: 74, 5: 265, 3: 649 } };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EYW Runway 09/27 (A319 only) — touchdown in first 1000 ft, LDA 4801 ft.
-// (LDA read off the shading boundary: 4788 ft unshaded, 4811 ft shaded.)
+// EYW Runway 09/27 (A319 only) — touchdown in first 1000 ft, LDA 4801 ft
+// (crew-confirmed; matches the 4788/4811 shading boundary).
 // Both brake modes are published, each gridded against tailwind.
 // Not authorised overweight or below RCC 5.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -455,8 +456,10 @@ const EYW_MAN = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SBP Runway 11/29 (A319 only) — touchdown in first 1250 ft, LDA 5300 ft.
-// (LDA read off the shading boundary: 5289 ft unshaded, 5305 ft shaded.)
+// SBP Runway 11/29 (A319 only) — touchdown in first 1250 ft.
+// The two ends differ: Rwy 11 LDA 5300 ft, Rwy 29 LDA 5600 ft (crew-supplied),
+// so the station is split by end. The AOM's shading boundary (5289 unshaded /
+// 5305 shaded) tracks Rwy 11, i.e. the chart is drawn against the shorter end.
 // RCC 6 permits either brake mode; RCC 5 is max manual only.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -503,12 +506,36 @@ const SBP_MAN = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STATIONS = {
-  "bos-lga-dca": {
-    label: "BOS 27 / LGA / DCA 01-19",
-    touchdownFt: 1200, ldaFt: null, minRcc: 3,
+  // One shared table covers all three airports, but their LDAs differ by up to
+  // 133 ft, so the group is split per field to drive the exceeds-LDA flag.
+  // The AOM basis is MED autobrake with max manual permitted, so both brake
+  // selections read the same table.
+  "bos-27": {
+    label: "BOS 27",
+    touchdownFt: 1200, ldaFt: 7001, minRcc: 3,
     rccMap: { 4: 3, 3: 3 },
-    // The AOM basis is MED autobrake with max manual permitted, so both brake
-    // selections read the same table.
+    byType: {
+      a319: { MED: BOS_A319, MAX_MAN: BOS_A319 },
+      a320: { MED: BOS_A320, MAX_MAN: BOS_A320 },
+      a321: { MED: BOS_A321, MAX_MAN: BOS_A321 },
+      "a321-leap": { MED: BOS_LEAP, MAX_MAN: BOS_LEAP },
+    },
+  },
+  "lga": {
+    label: "LGA (all runways)",
+    touchdownFt: 1200, ldaFt: 7002, minRcc: 3,
+    rccMap: { 4: 3, 3: 3 },
+    byType: {
+      a319: { MED: BOS_A319, MAX_MAN: BOS_A319 },
+      a320: { MED: BOS_A320, MAX_MAN: BOS_A320 },
+      a321: { MED: BOS_A321, MAX_MAN: BOS_A321 },
+      "a321-leap": { MED: BOS_LEAP, MAX_MAN: BOS_LEAP },
+    },
+  },
+  "dca-01-19": {
+    label: "DCA 01/19",
+    touchdownFt: 1200, ldaFt: 6869, minRcc: 3,
+    rccMap: { 4: 3, 3: 3 },
     byType: {
       a319: { MED: BOS_A319, MAX_MAN: BOS_A319 },
       a320: { MED: BOS_A320, MAX_MAN: BOS_A320 },
@@ -536,13 +563,13 @@ const STATIONS = {
   },
   "pei-08": {
     label: "PEI 08",
-    touchdownFt: 1000, ldaFt: null, minRcc: 3,
+    touchdownFt: 1000, ldaFt: 6283, minRcc: 3,
     rccMap: { 6: 6, 5: 5, 4: 3, 3: 3 },
     byType: { a319: { MED: PEI_08, MAX_MAN: PEI_08 } },
   },
   "pei-26": {
     label: "PEI 26",
-    touchdownFt: 1000, ldaFt: null, minRcc: 3,
+    touchdownFt: 1000, ldaFt: 6283, minRcc: 3,
     rccMap: { 6: 6, 5: 5, 4: 3, 3: 3 },
     byType: { a319: { MED: PEI_26, MAX_MAN: PEI_26 } },
   },
@@ -552,12 +579,18 @@ const STATIONS = {
     rccMap: { 6: 6, 5: 5 },
     byType: { a319: { MED: EYW_MED, MAX_MAN: EYW_MAN } },
   },
-  "sbp-11-29": {
-    label: "SBP 11/29",
+  // RCC 5 is max manual only — the MED entry carries no RCC 5 table, which the
+  // engine reports as "no data for this combination".
+  "sbp-11": {
+    label: "SBP 11",
     touchdownFt: 1250, ldaFt: 5300, minRcc: 5,
     rccMap: { 6: 6, 5: 5 },
-    // RCC 5 is max manual only — the MED entry carries no RCC 5 table, which the
-    // engine reports as "no data for this combination".
+    byType: { a319: { MED: SBP_MED, MAX_MAN: SBP_MAN } },
+  },
+  "sbp-29": {
+    label: "SBP 29",
+    touchdownFt: 1250, ldaFt: 5600, minRcc: 5,
+    rccMap: { 6: 6, 5: 5 },
     byType: { a319: { MED: SBP_MED, MAX_MAN: SBP_MAN } },
   },
 };

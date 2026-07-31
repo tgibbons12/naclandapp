@@ -65,16 +65,20 @@ export const a319Config = {
   showCrosswindLimit: true,
   melOptions: MEL_PENALTY_OPTIONS,
   // AOM 12p.5.3 — six station groups carry special inflight landing data for the
-  // A319. PEI is split by runway end: the AOM's Rwy 26 adder runs to +649 ft, far
-  // too large to fold into a single combined entry either way.
+  // A319. Groups whose members share a table but not an LDA (BOS/LGA/DCA), or
+  // whose runway-end adder differs (PEI, +649 ft on Rwy 26), are listed per field
+  // or per end so the exceeds-LDA flag is correct.
   shortRunwayStations: [
-    { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },
-    { value: "dca-15-33",   label: "DCA 15/33" },
-    { value: "jac-01-19",   label: "JAC 01/19" },
-    { value: "pei-08",      label: "PEI 08" },
-    { value: "pei-26",      label: "PEI 26" },
-    { value: "eyw-09-27",   label: "EYW 09/27" },
-    { value: "sbp-11-29",   label: "SBP 11/29" },
+    { value: "bos-27",    label: "BOS 27" },
+    { value: "lga",       label: "LGA (all runways)" },
+    { value: "dca-01-19", label: "DCA 01/19" },
+    { value: "dca-15-33", label: "DCA 15/33" },
+    { value: "jac-01-19", label: "JAC 01/19" },
+    { value: "pei-08",    label: "PEI 08" },
+    { value: "pei-26",    label: "PEI 26" },
+    { value: "eyw-09-27", label: "EYW 09/27" },
+    { value: "sbp-11",    label: "SBP 11" },
+    { value: "sbp-29",    label: "SBP 29" },
   ],
   showCatII: false,
   showBrakeMode: true,

@@ -23,12 +23,10 @@
 // 20R — the tables are void if you land longer than that.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// VERIFY: the AOM marks cells exceeding published LDA with red-on-grey shading but
-// never prints the LDA itself. The shading boundary across all eight tables brackets
-// it to between 5697 and 5723 ft, and SNA 02L/20R is a 5,701 ft runway — that value
-// reproduces the published shading exactly, cell for cell. Confirm against the
-// airport diagram before operational use.
-const SNA_LDA_FT = 5701;
+// Crew-supplied LDA. The AOM marks cells exceeding published LDA with red-on-grey
+// shading but never prints the LDA itself; the shading boundary across all eight
+// tables brackets it to between 5697 and 5723 ft, which this value sits inside.
+const SNA_LDA_FT = 5700;
 
 const OATS = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44];
 const W_CEO = [120, 130, 140, 150, 160, 170, 171.5];

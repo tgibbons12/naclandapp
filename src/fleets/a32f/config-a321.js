@@ -78,11 +78,15 @@ export const a321Config = {
   showCrosswindLimit: true,
   melOptions: MEL_PENALTY_OPTIONS,
   // AOM 12p.5.8 — four station groups, each with its own IAE/CFM-56 table set.
+  // The BOS/LGA/DCA group shares one table across three airports with different
+  // LDAs, so it is listed per field.
   shortRunwayStations: [
-    { value: "bos-lga-dca", label: "BOS 27 / LGA / DCA 01-19" },
-    { value: "dca-15-33",   label: "DCA 15/33" },
-    { value: "sna-02l",     label: "SNA 02L" },
-    { value: "sna-20r",     label: "SNA 20R" },
+    { value: "bos-27",    label: "BOS 27" },
+    { value: "lga",       label: "LGA (all runways)" },
+    { value: "dca-01-19", label: "DCA 01/19" },
+    { value: "dca-15-33", label: "DCA 15/33" },
+    { value: "sna-02l",   label: "SNA 02L" },
+    { value: "sna-20r",   label: "SNA 20R" },
   ],
   showCatII: false,
   showBrakeMode: true,
