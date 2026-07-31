@@ -67,6 +67,7 @@ const css = `
   .icon-btn {
     background: none; border: none; color: #007aff; font-size: 22px;
     cursor: pointer; padding: 0 6px; line-height: 1; font-family: inherit;
+    display: inline-flex; align-items: center;
   }
   .icon-btn:active { opacity: 0.5; }
   .mode-seg { display: inline-flex; background: rgba(118,118,128,0.12); border-radius: 10px; padding: 3px; }
@@ -95,7 +96,8 @@ const css = `
   /* No row dividers — the real app's panels are clean white with spacing only. */
   .srow { display: flex; flex-direction: column; align-items: center; padding: 4px 0 3px; gap: 3px; }
   .lbl { font-size: 13px; font-weight: 400; color: #000; text-align: center; line-height: 1.3; }
-  .sublbl { font-size: 11px; color: #8e8e93; text-align: center; margin-top: -2px; }
+  /* Real app renders the tailwind hint at label size and weight, not as fine print. */
+  .sublbl { font-size: 13px; color: #000; text-align: center; line-height: 1.3; margin-top: -2px; }
   .val { font-size: 15px; color: #007aff; text-align: center; }
   .seg { display: inline-flex; background: rgba(118,118,128,0.12); border-radius: 9px; padding: 2px; gap: 0; position: relative; }
   .seg-btn {
@@ -104,6 +106,13 @@ const css = `
     cursor: pointer; font-family: inherit; transition: color 0.15s;
     min-width: 48px; text-align: center; z-index: 1; white-space: nowrap;
   }
+  /* Hairline between adjacent inactive segments, as iOS draws it — suppressed on
+     either side of the raised active pill. */
+  .seg-btn::before {
+    content: ''; position: absolute; left: 0; top: 6px; bottom: 6px;
+    width: 1px; background: rgba(60,60,67,0.22);
+  }
+  .seg-btn:first-child::before, .seg-btn.active::before, .seg-btn.active + .seg-btn::before { display: none; }
   .seg-btn.active { background: #ffffff; color: #000; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.18), 0 1px 1px rgba(0,0,0,0.06); }
   .seg-btn:not(.active):active { background: rgba(0,0,0,0.05); }
   /* Light-grey pill split by a hairline, matching the real app's −/+ control. */
@@ -996,7 +1005,13 @@ export default function App() {
       <div className="shell">
         {/* Top chrome: info button, Normal/Non-Normal segmented pill, page icon. */}
         <div className="top-bar">
-          <button className="icon-btn" aria-label="Info">ⓘ</button>
+          <button className="icon-btn" aria-label="Info">
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <circle cx="13" cy="13" r="10.5" />
+              <circle cx="13" cy="8.2" r="0.9" fill="currentColor" stroke="none" />
+              <path d="M13 11.4v7.2" strokeLinecap="round" />
+            </svg>
+          </button>
           <div className="mode-seg">
             <button
               className={`mode-btn${activeTab === "normal" ? " active" : ""}`}
@@ -1007,7 +1022,13 @@ export default function App() {
               onClick={() => setActiveTab("nonnormal")}
             >Non-Normal</button>
           </div>
-          <button className="icon-btn" aria-label="Pages" onClick={() => setShowFleet(true)}>☰</button>
+          {/* Real app uses a document/pages glyph here, not a hamburger. */}
+          <button className="icon-btn" aria-label="Pages" onClick={() => setShowFleet(true)}>
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <rect x="4.5" y="3" width="17" height="20" rx="2.6" />
+              <path d="M8.2 8.2h9.6M8.2 12h9.6M8.2 15.8h6.2" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
         <div className="card">
           <div className="title-bar">
