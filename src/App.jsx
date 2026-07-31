@@ -151,7 +151,9 @@ const css = `
   /* The stepper stays centred in the column like every other one; Calculate is
      pinned out to the right rather than shifting the stepper off centre. */
   .hw-row { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; }
-  .hw-row .calc-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+  /* Sits just clear of the centred stepper rather than out at the panel edge,
+     matching the real app. The stepper is ~89px wide, so half of it plus a gap. */
+  .hw-row .calc-btn { position: absolute; left: 50%; margin-left: 68px; top: 50%; transform: translateY(-50%); }
   .short-row { display: flex; align-items: center; gap: 10px; justify-content: center; }
   .short-none { font-size: 14px; color: #8e8e93; }
   .short-warn { font-size: 10.5px; color: #c0392b; text-align: center; line-height: 1.35; max-width: 260px; margin-top: 2px; }
