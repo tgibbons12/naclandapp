@@ -82,7 +82,7 @@ const css = `
     flex: 1; min-height: 0;
     /* padding-bottom lifts the panels clear of the bottom bar so the grey card
        shows through beneath them, as in the real app. */
-    padding: 8px 14px 56px; gap: 38px;
+    padding: 14px 14px 56px; gap: 38px;
   }
   @media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
   .panel {
