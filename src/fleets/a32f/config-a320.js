@@ -6,6 +6,7 @@ import {
 } from "./calc.js";
 import { calcSpecial } from "./calc-special.js";
 import { MEL_PENALTY_OPTIONS } from "./limits.js";
+import { nnDefaultsFor, calculateNonNormal } from "./nonnormal-fleet.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A320
@@ -138,4 +139,10 @@ export const a320Config = {
         : (distances ? distances[s.brakingAction] : null),
     };
   },
+
+  // ── Non-Normal page ──
+  // Failure data is published per aircraft AND engine, so the non-normal tab
+  // carries its own aircraft/engine picker; this is only its opening value.
+  nnDefaults: nnDefaultsFor("a320-cfm"),
+  calculateNonNormal,
 };

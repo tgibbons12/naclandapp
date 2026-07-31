@@ -1,6 +1,7 @@
 import { calcA319, lookupA319Speeds, lookupClimbLimited } from "./calc.js";
 import { calcSpecial } from "./calc-special.js";
 import { MEL_PENALTY_OPTIONS } from "./limits.js";
+import { nnDefaultsFor, calculateNonNormal } from "./nonnormal-fleet.js";
 
 // A319 anti-ice / ice accretion corrections, from the two climb-limited pages in
 // AOM 12p.3.2. Like the other A32F types these vary by landing configuration.
@@ -129,4 +130,10 @@ export const a319Config = {
         : (distances ? distances[s.brakingAction] : null),
     };
   },
+
+  // ── Non-Normal page ──
+  // Failure data is published per aircraft AND engine, so the non-normal tab
+  // carries its own aircraft/engine picker; this is only its opening value.
+  nnDefaults: nnDefaultsFor("a319-cfm"),
+  calculateNonNormal,
 };

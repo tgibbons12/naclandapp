@@ -24,11 +24,15 @@ blocks=[]; cur=None; variant=system=None
 for ln in lines:
     s=ln.strip()
     if not s: continue
-    m=re.search(r'Landing Distance with Failures Data (A3\d\d \([A-Z0-9\-]+\))', s)
-    if m: variant=m.group(1)
-    m=re.match(r'(A3\d\d \([A-Z0-9\-]+\))\s*[–-]\s*(.+?)\s*$', s)
-    if m and 'SYSTEM' in m.group(2).upper():
-        variant, system = m.group(1), m.group(2).strip()
+    # Variant comes from the running page header, which is spelled consistently.
+    # The table title is NOT used for the variant: it disagrees with the header in
+    # places ("A320 (IAE A5)" vs "A320 (IAE)", "A321 (CFM)" vs "A321 (CFM-56)"),
+    # and coupling the two meant a variant miss silently froze the system label.
+    m=re.search(r'Landing Distance with Failures Data\s+(A3\d\d \([A-Z0-9 /\-]+\))', s)
+    if m: variant=m.group(1).strip()
+    # System comes from the table title, matched independently of the variant.
+    m=re.search(r'[–-]\s*([A-Z][A-Z/ ]*SYSTEM)\s*$', s)
+    if m: system=m.group(1).strip()
     mr=RCC_RE.match(s)
     if mr:
         cur=dict(variant=variant, system=system, rcc=int(mr.group(1)), lines=[])
@@ -46,10 +50,16 @@ clean=lambda t:int(t.replace('_','-').replace(' ','').replace(',',''))
 
 failures=[]; unparsed=[]
 for b in blocks:
-    base=None
+    base=None; autolandFt=None; baseKlb=None; belowPerKlb=None
     for s in b['lines']:
         m=re.match(r'REF DIST without failure.*?=\s*([\d ,]+)\s*ft', s)
         if m: base=clean(m.group(1))
+        m=re.search(r'Automatic Landing correction:\s*add\s*([\d ,]+)\s*ft', s)
+        if m: autolandFt=clean(m.group(1))
+        m=re.search(r'Weight correction:\s*subtract\s*([\d ,]+)\s*ft per 1\s?klb below\s*([\d ,]+)\s?klb', s)
+        if m: belowPerKlb, baseKlb = clean(m.group(1)), clean(m.group(2))
+        m=re.search(r'REF\s+DIST.*?for\s*([\d ,]+)\s?klb', s)
+        if m and baseKlb is None: baseKlb=clean(m.group(1))
     # Group by failure: a FULL row after an already-populated group starts a new
     # failure. Text fragments keep accumulating into the current group, so labels
     # that wrap *around* the data rows (e.g. "ALTN L(R) / RELEASED (if / NORM BRK /
@@ -87,7 +97,8 @@ for b in blocks:
     if g and g['rows']: groups.append(g)
     for gr in groups:
         failures.append(dict(variant=b['variant'], system=b['system'], rcc=b['rcc'],
-            failure=' '.join(gr['frags']).strip(), baseNoFailure=base, rows=gr['rows']))
+            failure=' '.join(gr['frags']).strip(), baseNoFailure=base,
+            autolandFt=autolandFt, baseKlb=baseKlb, belowPerKlb=belowPerKlb, rows=gr['rows']))
 
 
 print(f'blocks: {len(blocks)}   failure entries: {len(failures)}')

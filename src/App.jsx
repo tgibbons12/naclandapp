@@ -2,6 +2,8 @@ import { useState, useCallback } from "react";
 import { FLEETS, FAMILY_LIST } from "./lib/fleetRegistry.js";
 import { hasSpecialData } from "./fleets/a32f/calc-special.js";
 import { landingCrosswindLimit } from "./fleets/a32f/limits.js";
+import { NN_VARIANTS, systemsFor as nnSystemsFor, failuresFor as nnFailuresFor,
+         flapsFor as nnFlapsFor } from "./fleets/a32f/calc-nonnormal.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RCAM DATA
@@ -593,6 +595,87 @@ function ERJLeftPanel({ s, set, fleet }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // A32F PANEL
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// A32F NON-NORMAL LEFT PANEL
+// Inputs per AOM 16p.16. The aircraft picker here lists seven aircraft/engine
+// combinations, not the normal page's four types, because failure data is
+// published per engine.
+// ─────────────────────────────────────────────────────────────────────────────
+function A32FNonNormalLeftPanel({ s, set, fleet }) {
+  const systems  = nnSystemsFor(s.nnVariant);
+  const failures = s.system ? nnFailuresFor(s.nnVariant, s.system) : [];
+  const flaps    = (s.system && s.failure)
+    ? nnFlapsFor(s.nnVariant, s.system, s.failure, s.brakingAction) : [];
+
+  // Changing aircraft or system can orphan the current selection, so re-seed
+  // downstream choices rather than leaving a failure that doesn't exist.
+  const onVariant = (v) => {
+    const sys = nnSystemsFor(v)[0] ?? null;
+    const fail = sys ? (nnFailuresFor(v, sys)[0] ?? null) : null;
+    set("nnVariant")(v); set("system")(sys); set("failure")(fail);
+  };
+  const onSystem = (sys) => {
+    set("system")(sys);
+    set("failure")(nnFailuresFor(s.nnVariant, sys)[0] ?? null);
+  };
+
+  return (
+    <div className="panel">
+      <div className="srow">
+        <div className="lbl">Aircraft Type &amp; Engine</div>
+        <TapInput options={NN_VARIANTS} value={s.nnVariant} onChange={onVariant} />
+      </div>
+      <div className="srow">
+        <div className="lbl">System</div>
+        <TapInput
+          options={systems.map(x => ({ value: x, label: x.replace(/ SYSTEM$/, "") }))}
+          value={s.system ?? ""} onChange={onSystem}
+        />
+      </div>
+      <div className="srow">
+        <div className="lbl">Failure</div>
+        <TapInput
+          options={failures.map(x => ({ value: x, label: x }))}
+          value={s.failure ?? ""} onChange={set("failure")}
+        />
+      </div>
+      <div className="srow">
+        <div className="lbl">Flap Lever Position</div>
+        <Seg
+          options={(flaps.length ? flaps : ["FULL", "3"]).map(f => ({ value: f, label: f === "FULL" ? "Full" : f }))}
+          value={s.flap} onChange={set("flap")}
+        />
+      </div>
+      <div className="srow">
+        <div className="lbl">Operative Thrust Reversers</div>
+        <Seg
+          options={[{ value: 0, label: "0" }, { value: 1, label: "1" }, { value: 2, label: "Both" }]}
+          value={s.reversersOperative} onChange={set("reversersOperative")}
+        />
+      </div>
+      <div className="srow">
+        <div className="lbl">Landing Weight</div>
+        <TapInput
+          value={s.landingWeight} onChange={set("landingWeight")}
+          step={1000} min={80000} max={210000}
+          display={s.landingWeight.toLocaleString()}
+        />
+        <Stepper value={s.landingWeight} onChange={set("landingWeight")} step={1000} min={80000} max={210000} />
+      </div>
+      <div className="toggle-grid">
+        <div className="toggle-cell">
+          <div className="toggle-lbl">Overweight</div>
+          <Toggle checked={!!s.overweightProc} onChange={set("overweightProc")} />
+        </div>
+        <div className="toggle-cell">
+          <div className="toggle-lbl">Autoland</div>
+          <Toggle checked={!!s.autoland} onChange={set("autoland")} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function A32FLeftPanel({ s, set, fleet, variants, currentVariantId, onVariantChange }) {
   return (
     <div className="panel">
@@ -936,13 +1019,23 @@ function BottomBar({ fleet, result, s, onReset, acLabel, isNonNormal }) {
         <div className={`dist-num${
           isNonNormal || special?.tooShort || special?.notAuthorized || special?.exceedsLDA ? " nn" : ""
         }`}>
-          {special?.tooShort ? "TOO SHORT"
+          {result?.noGo ? "NO GO"
+            : result?.notAuthorized ? "NOT AUTH"
+            : result?.noData ? "NO DATA"
+            : special?.tooShort ? "TOO SHORT"
             : special?.notAuthorized ? "NOT AUTH"
             : special?.noData ? "NO DATA"
             : primaryDist != null ? `${primaryDist} feet` : "— feet"}
         </div>
         <div className="dist-lbl">
-          {special ? specialLabel(special) : "Landing Distance"}
+          {/* A non-normal no-go is the chart itself declining to publish a number:
+              "landing distance greater than 18,000 ft for all conditions". */}
+          {result?.noGo ? "Greater than 18,000 ft for all conditions"
+            : result?.notAuthorized ? result.reason
+            : result?.noData ? "No published data for this combination"
+            : special ? specialLabel(special)
+            : isNonNormal ? "Landing Distance with Failure"
+            : "Landing Distance"}
         </div>
       </div>
     </div>
@@ -1060,12 +1153,16 @@ export default function App() {
 
           <div className="panels">
             {familyId === "a32f" ? (
+              isNonNormal ? (
+                <A32FNonNormalLeftPanel s={s} set={setS} fleet={fleet} />
+              ) : (
               <A32FLeftPanel
                 s={s} set={setS} fleet={fleet}
                 variants={family.variants}
                 currentVariantId={fleetId}
                 onVariantChange={handleVariantChange}
               />
+              )
             ) : familyId === "b737" ? (
               isNonNormal ? (
                 <B737NonNormalLeftPanel
