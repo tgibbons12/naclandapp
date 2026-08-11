@@ -51,11 +51,12 @@ they are transcribed twice by independent means and only agreeing cells accepted
 
 - Every coefficient checked against 16p-68 individually (weight, speed, altitude,
   wind, temperature, slope, reversers, overweight, autoland) — all exact.
-- Reference-condition sweep: 2,751 cells return their own REF DIST, 0 mismatches.
+- Reference-condition sweep: 2,877 cells return their own REF DIST, 0 mismatches.
   Note this is a weak check: it compares a cell against itself and cannot detect
   a value attached to the wrong failure. It passed throughout the bug below.
 - Cross-table coverage: within a system, all six RwyCC tables must list the same
-  failures. **0 of 53 blocks incomplete.** 88 labels canonicalised from this.
+  failures. 275 failure entries complete; **56 have a missing RwyCC table**, each
+  traceable to a label that wrapped differently on that page.
 - Monotonicity across RwyCC — 9 flags, each checked against the source and found
   to be **genuine AOM values** (e.g. A321 IAE `G+B` really reads 9270 → 9070 from
   RwyCC 5 to 4; A321 IAE brakes `ANTISKID FAULT` reads 7270 → 7250).
@@ -81,6 +82,45 @@ label-grouping defects and 14 reference-weight anomalies — all the same cause.
 
 Lesson worth keeping: self-consistency checks cannot detect systematically
 mis-filed data. Render it, or compare it against something external.
+
+## Second bug: 220 dropped rows
+
+ΔVREF prints as `0 / 140kt` split across three lines on the EMER CONFIG rows,
+leaving the data row one field short of what the row pattern required. Those rows
+were silently discarded — 220 of them, about 6% of the chapter, including **every
+DC/ELEC EMER CONFIG failure across all six variants**. Fixed by accepting rows
+with no inline ΔVREF (it does not feed the distance calculation).
+
+Found by questioning why a flap-1 row appeared on a failure that should not have
+had one. Like the first bug, no automated check caught it.
+
+## Outstanding label defects
+
+The numbers are verified; the *names* are not clean. Roughly a third of the 76
+extracted names are wrong in one of four ways:
+
+1. **Two failures merged** under one label (6 entries), e.g.
+   `DC EMER CONFIG ELEC EMER CONFIG` — no flap-ordering boundary between them.
+2. **Missing RwyCC tables** (56 entries) — the failure exists but some of its six
+   tables are filed under a variant spelling of the name.
+3. **Near-duplicates from punctuation**, e.g. `ELAC 1+2 FAULT / L+R ELEV FAULT`
+   vs `ELAC 1+2 FAULT/ L+R ELEV FAULT`.
+4. **Fragments and captions captured as failures**, e.g. `FAULT`, `with SPOILER`,
+   `SLATS > 3 Refer to the applicable Landing Distance table ...`.
+
+True distinct failure count is probably nearer 45–50, not 76. `docs/nonnormal-failures.md`
+is the full inventory.
+
+## Not yet matching AOM 16p.16
+
+The published input list for the Land App's non-normal page includes four controls
+the panel does not yet have: **Additional Failure**, **Autothrust**, **Ice
+Accretion**, and **Use of FMGC VREF**. The page also owes a **VAPP** readout
+alongside the distance. The shared right panel still shows Short Runways and the
+crosswind limit, which belong to the normal page only.
+
+Note that slope is deliberately absent: the charts publish a per-1% slope
+correction but the real Land App never asks for it, so it defaults to 0.
 
 ## Incomplete
 

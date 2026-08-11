@@ -124,6 +124,10 @@ const css = `
   .seg-btn:first-child::before, .seg-btn.active::before, .seg-btn.active + .seg-btn::before { display: none; }
   .seg-btn.active { background: #ffffff; color: #000; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.18), 0 1px 1px rgba(0,0,0,0.06); }
   .seg-btn:not(.active):active { background: rgba(0,0,0,0.05); }
+  /* Published-but-unavailable: shown so the absence of data is visible, rather
+     than the option silently vanishing from the control. */
+  .seg-btn.off { color: rgba(60,60,67,0.3); cursor: default; }
+  .seg-btn.off:active { background: transparent; }
   /* Light-grey pill split by a hairline, matching the real app's −/+ control. */
   .stepper { display: inline-flex; align-items: stretch; border-radius: 8px; overflow: hidden; background: #EFEFF0; }
   .step-btn {
@@ -218,6 +222,11 @@ const css = `
   .dist-num { font-size: clamp(28px, 4.5vw, 40px); font-weight: 400; color: #578E48; line-height: 1; white-space: nowrap; }
   .dist-lbl { font-size: 11px; color: #8e8e93; text-align: right; margin-top: 2px; }
   .dist-num.nn { color: #c0392b; }
+  /* Non-Normal is a degraded-state page — every green accent that reads
+     "normal operations" turns red so the mode is unmistakable at a glance. */
+  .nn-mode .title-bar h1,
+  .nn-mode .bot-type,
+  .nn-mode .bot-note { color: #c0392b; }
   /* ── TAB BAR ── */
   .tab-bar {
     background: transparent;
@@ -283,11 +292,22 @@ const css = `
 function Seg({ options, value, onChange }) {
   return (
     <div className="seg">
-      {options.map(o => (
-        <button key={o.value ?? o} className={`seg-btn${value === (o.value ?? o) ? " active" : ""}`} onClick={() => onChange(o.value ?? o)}>
-          {o.label ?? o}
-        </button>
-      ))}
+      {options.map(o => {
+        const val = o.value ?? o;
+        // A disabled option stays visible but unselectable — used where the AOM
+        // publishes no data for that choice, so the gap itself is informative.
+        const off = o.disabled === true;
+        return (
+          <button
+            key={val}
+            className={`seg-btn${value === val ? " active" : ""}${off ? " off" : ""}`}
+            disabled={off}
+            onClick={() => { if (!off) onChange(val); }}
+          >
+            {o.label ?? o}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -601,6 +621,13 @@ function ERJLeftPanel({ s, set, fleet }) {
 // combinations, not the normal page's four types, because failure data is
 // published per engine.
 // ─────────────────────────────────────────────────────────────────────────────
+const MEL_FACTORS = [
+  { value: 1,    label: "None" },  { value: 1.05, label: "1.05" },
+  { value: 1.10, label: "1.10" },  { value: 1.15, label: "1.15" },
+  { value: 1.20, label: "1.20" },  { value: 1.25, label: "1.25" },
+  { value: 1.30, label: "1.30" },
+];
+
 function A32FNonNormalLeftPanel({ s, set, fleet }) {
   const systems  = nnSystemsFor(s.nnVariant);
   const failures = s.system ? nnFailuresFor(s.nnVariant, s.system) : [];
@@ -612,12 +639,20 @@ function A32FNonNormalLeftPanel({ s, set, fleet }) {
   const onVariant = (v) => {
     const sys = nnSystemsFor(v)[0] ?? null;
     const fail = sys ? (nnFailuresFor(v, sys)[0] ?? null) : null;
-    set("nnVariant")(v); set("system")(sys); set("failure")(fail);
+    set("nnVariant")(v); set("system")(sys); set("failure")(fail); fixFlap(v, sys, fail);
   };
   const onSystem = (sys) => {
-    set("system")(sys);
-    set("failure")(nnFailuresFor(s.nnVariant, sys)[0] ?? null);
+    const fail = nnFailuresFor(s.nnVariant, sys)[0] ?? null;
+    set("system")(sys); set("failure")(fail); fixFlap(s.nnVariant, sys, fail);
   };
+  const onFailure = (fail) => { set("failure")(fail); fixFlap(s.nnVariant, s.system, fail); };
+  // Keep the flap selection legal: not every failure publishes every lever
+  // position, so fall back to the first one this failure actually has.
+  function fixFlap(v, sys, fail) {
+    if (!sys || !fail) return;
+    const avail = nnFlapsFor(v, sys, fail, s.brakingAction);
+    if (avail.length && !avail.includes(s.flap)) set("flap")(avail[0]);
+  }
 
   return (
     <div className="panel">
@@ -636,14 +671,36 @@ function A32FNonNormalLeftPanel({ s, set, fleet }) {
         <div className="lbl">Failure</div>
         <TapInput
           options={failures.map(x => ({ value: x, label: x }))}
-          value={s.failure ?? ""} onChange={set("failure")}
+          value={s.failure ?? ""} onChange={onFailure}
         />
       </div>
+      {/* AOM 16p.16 lists the lever positions as "1, 3 or Full", so all three are
+          always shown; the ones this failure has no table for are greyed out. */}
       <div className="srow">
         <div className="lbl">Flap Lever Position</div>
         <Seg
-          options={(flaps.length ? flaps : ["FULL", "3"]).map(f => ({ value: f, label: f === "FULL" ? "Full" : f }))}
+          options={["FULL", "3", "1"].map(f => ({
+            value: f,
+            label: f === "FULL" ? "Full" : f,
+            disabled: !flaps.includes(f),
+          }))}
           value={s.flap} onChange={set("flap")}
+        />
+      </div>
+      {/* AOM 16p.16 "Failure (as listed) and Additional Failure if applicable".
+          Per 16p.5.2 the second failure contributes only its uncorrected
+          REF DIST delta, so it needs no flap or condition inputs of its own. */}
+      <div className="srow">
+        <div className="lbl">Additional Failure</div>
+        <TapInput
+          options={[{ value: "none", label: "None" },
+            ...nnSystemsFor(s.nnVariant).flatMap(sys =>
+              nnFailuresFor(s.nnVariant, sys).map(f => ({ value: sys + "||" + f, label: f })))]}
+          value={s.addSystem && s.addFailure !== "none" ? s.addSystem + "||" + s.addFailure : "none"}
+          onChange={(v) => {
+            if (v === "none") { set("addSystem")(null); set("addFailure")("none"); }
+            else { const [sys, f] = v.split("||"); set("addSystem")(sys); set("addFailure")(f); }
+          }}
         />
       </div>
       <div className="srow">
@@ -662,7 +719,21 @@ function A32FNonNormalLeftPanel({ s, set, fleet }) {
         />
         <Stepper value={s.landingWeight} onChange={set("landingWeight")} step={1000} min={80000} max={210000} />
       </div>
+      {/* MEL is a multiplier here, not a feet adder — AOM 16p.5.1:
+          Landing Distance = ILD × MEL landing penalty factor × 1.15 */}
+      <div className="srow">
+        <div className="lbl">MEL Landing Penalty Factor</div>
+        <TapInput options={MEL_FACTORS} value={s.melFactor ?? 1} onChange={set("melFactor")} />
+      </div>
       <div className="toggle-grid">
+        <div className="toggle-cell">
+          <div className="toggle-lbl">Autothrust</div>
+          <Toggle checked={!!s.autothrust} onChange={set("autothrust")} />
+        </div>
+        <div className="toggle-cell">
+          <div className="toggle-lbl">Ice Accretion</div>
+          <Toggle checked={!!s.iceAccretion} onChange={set("iceAccretion")} />
+        </div>
         <div className="toggle-cell">
           <div className="toggle-lbl">Overweight</div>
           <Toggle checked={!!s.overweightProc} onChange={set("overweightProc")} />
@@ -670,6 +741,10 @@ function A32FNonNormalLeftPanel({ s, set, fleet }) {
         <div className="toggle-cell">
           <div className="toggle-lbl">Autoland</div>
           <Toggle checked={!!s.autoland} onChange={set("autoland")} />
+        </div>
+        <div className="toggle-cell">
+          <div className="toggle-lbl">Use of FMGC V<sub>REF</sub></div>
+          <Toggle checked={!!s.fmgcVref} onChange={set("fmgcVref")} />
         </div>
       </div>
     </div>
@@ -830,7 +905,7 @@ function B737NonNormalLeftPanel({ s, set, fleet, variants, currentVariantId, onV
 // ─────────────────────────────────────────────────────────────────────────────
 // RIGHT PANEL  (shared — braking action row hidden for ERJ)
 // ─────────────────────────────────────────────────────────────────────────────
-function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShowMACG }) {
+function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShowMACG, isNonNormal }) {
   const isERJ = fleet.id === "erj";
   // Stations carrying special inflight landing data for this type. See
   // docs/short-runway-stations.md for the assumptions behind each one.
@@ -872,7 +947,7 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
           <Stepper value={s.brakingAction} onChange={set("brakingAction")} step={1} min={1} max={6} />
         </div>
       )}
-      {!isERJ && fleet.showCrosswindLimit && (
+      {!isERJ && fleet.showCrosswindLimit && !isNonNormal && (
         <div className="srow">
           <div className="lbl">
             Rwy Cond Code Max X-wind:{" "}
@@ -885,7 +960,7 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
           <button className="rcam-btn" onClick={onShowRCAM}>Runway Condition Assessment Matrix</button>
         </div>
       )}
-      {fleet.melOptions && (
+      {fleet.melOptions && !isNonNormal && (
         <div className="srow">
           <div className="lbl">MEL Landing Penalty Factor</div>
           <TapInput
@@ -900,7 +975,7 @@ function RightPanel({ s, set, fleet, brakingLbl, onCalculate, onShowRCAM, onShow
           <button className="rcam-btn" onClick={onShowMACG}>MACG</button>
         </div>
       )}
-      {fleet.showShortRunway && (
+      {fleet.showShortRunway && !isNonNormal && (
         <div className="srow">
           <div className="lbl">{fleet.shortRunwayLabel ?? "Short Runway Station"}</div>
           {/* A32F presents this as a plain value list with "None" as the first
@@ -1111,12 +1186,17 @@ export default function App() {
   // short name used in the Aircraft Type picker (e.g. A321NA/NX → A321 LEAP-1A).
   const acLabel = familyId === "ejet" || familyId === "erj"
     ? s.acType
-    : (fleet.bottomLabel ?? fleet.label);
+    // The A32F non-normal page picks its own aircraft/engine combination — the
+    // failure data is published per engine — so the bottom bar must follow that
+    // selection rather than the normal page's aircraft type.
+    : (familyId === "a32f" && isNonNormal)
+      ? (NN_VARIANTS.find(v => v.value === s.nnVariant)?.label ?? fleet.label)
+      : (fleet.bottomLabel ?? fleet.label);
 
   return (
     <>
       <style>{css}</style>
-      <div className="shell">
+      <div className={`shell${isNonNormal ? " nn-mode" : ""}`}>
         {/* Top chrome: info button, Normal/Non-Normal segmented pill, page icon. */}
         <div className="top-bar">
           <button className="icon-btn" aria-label="Info">
@@ -1186,6 +1266,7 @@ export default function App() {
               <EjetLeftPanel s={s} set={setS} fleet={fleet} />
             )}
             <RightPanel
+              isNonNormal={isNonNormal}
               s={s} set={setS} fleet={fleet}
               brakingLbl={brakingLbl}
               onCalculate={calculate}

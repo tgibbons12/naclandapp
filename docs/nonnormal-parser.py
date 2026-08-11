@@ -45,6 +45,44 @@ blocks=[b for b in blocks if b['system'] and 'example' not in b['system'].lower(
 ROW = re.compile(rf'^(?:(.*?)\s+)?(FULL|3|1)\s+({NUM}(?:\s*/\s*\d+\s?kt)?)\s+'
                  rf'({NUM})\s+({NUM})\s+({NUM}|N/A)\s+({NUM})\s+({NUM})\s+({NUM})\s+({NUM})\s+'
                  rf'({NUM}|INOP)\s+({NUM})\s*$')
+# Some rows print ΔVREF as "0 / 140kt" broken across three lines, leaving the data
+# row with no ΔVREF of its own. Those rows were being dropped entirely (220 of
+# them, including every DC/ELEC EMER CONFIG failure). ΔVREF does not feed the
+# distance calculation, so capture the row with dvref=None rather than lose it.
+
+# Fragments that are not part of a failure name: orphaned halves of a split ΔVREF
+# ("0/", "140kt", "10 /") and the continuation of a parenthetical qualifier
+# ("(Calculated with" / "140kt min)").
+# Caption and cross-reference text that sits inside the FAILURE column region and
+# is not part of any failure name.
+CAPTION_JUNK = [
+    r"Refer to the applicable Landing Distance table",
+    r"APPR\s*oach\s*CORR\s*ection",
+    r"CAUTION",
+    r"Landing Distance table",
+    r"Indication Failure if applicable",
+]
+
+def scrub(t):
+    """Strip a trailing orphaned ΔVREF that shares a physical line with a name."""
+    t = re.sub(r"\s{2,}\d+\s*/\s*$", "", t)
+    for pat in CAPTION_JUNK:
+        t = re.sub(pat, " ", t)
+    return re.sub(r"\s{2,}", " ", t).strip()
+
+def keepfrag(t):
+    t=scrub(t)
+    if not t: return False
+    if re.fullmatch(r"\d+\s*/?", t): return False
+    if re.fullmatch(r"\d+\s?kt\s*/?", t): return False
+    if re.fullmatch(r"\d+\s?kt min\)?", t): return False
+    if t.startswith("(Calculated"): return False
+    if re.fullmatch(r"[)/\-–,.]+", t): return False
+    return True
+
+ROW_NODV = re.compile(rf'^(?:(.*?)\s+)?(FULL|3|1)\s+'
+                 rf'({NUM})\s+({NUM})\s+({NUM}|N/A)\s+({NUM})\s+({NUM})\s+({NUM})\s+({NUM})\s+'
+                 rf'({NUM}|INOP)\s+({NUM})\s*$')
 NOGO = re.compile(rf'^(?:(.*?)\s+)?(FULL|3|1)\s+({NUM}(?:\s*/\s*\d+\s?kt)?)\s+Landing Distance (?:is )?greater')
 clean=lambda t:int(t.replace('_','-').replace(' ','').replace(',',''))
 
@@ -64,21 +102,35 @@ for b in blocks:
     # failure. Text fragments keep accumulating into the current group, so labels
     # that wrap *around* the data rows (e.g. "ALTN L(R) / RELEASED (if / NORM BRK /
     # FAULT)") reassemble in reading order.
+    RANK={'FULL':3,'3':2,'1':1}
     groups=[]; g=None
     def newgroup():
         return dict(frags=[], rows=[])
     for s in b['lines']:
         if re.match(r'REF DIST without failure', s): continue
         m=ROW.match(s); mg=NOGO.match(s) if not m else None
+        m2=ROW_NODV.match(s) if (not m and not mg) else None
+        if m2:
+            if g and g['rows'] and RANK[m2.group(2)] >= RANK[g['rows'][-1]['flap']]:
+                groups.append(g); g=newgroup()
+            if g is None: g=newgroup()
+            if m2.group(1) and keepfrag(m2.group(1)): g['frags'].append(scrub(m2.group(1)))
+            g['rows'].append(dict(flap=m2.group(2), dvref=None,
+                refDist=clean(m2.group(3)), perKlb=clean(m2.group(4)),
+                perSpd=None if m2.group(5)=='N/A' else clean(m2.group(5)),
+                perAlt=clean(m2.group(6)), perTW=clean(m2.group(7)),
+                perTemp=clean(m2.group(8)), perSlope=clean(m2.group(9)),
+                perRev=None if m2.group(10)=='INOP' else clean(m2.group(10)),
+                perOVW=clean(m2.group(11))))
+            continue
         if m or mg:
             mm = m or mg
             # Within one failure the flap rows descend (FULL → 3 → 1). A row whose
             # flap ranks at or above the previous row's starts a new failure.
-            RANK={'FULL':3,'3':2,'1':1}
             if g and g['rows'] and RANK[mm.group(2)] >= RANK[g['rows'][-1]['flap']]:
                 groups.append(g); g=newgroup()
             if g is None: g=newgroup()
-            if mm.group(1): g['frags'].append(mm.group(1).strip())
+            if mm.group(1) and keepfrag(mm.group(1)): g['frags'].append(scrub(mm.group(1)))
             if m:
                 g['rows'].append(dict(flap=m.group(2), dvref=m.group(3).strip(),
                     refDist=clean(m.group(4)), perKlb=clean(m.group(5)),
@@ -91,9 +143,11 @@ for b in blocks:
                 g['rows'].append(dict(flap=mg.group(2), dvref=mg.group(3).strip(), noGo=True))
             continue
         if BOILER.search(s): continue
+        # orphaned halves of a split ΔVREF, e.g. "0/" or "140kt"
+        if not keepfrag(s): continue
         if re.match(r"^[A-Z0-9][A-Za-z0-9 /()+\.'&,\u2013-]{1,45}$", s) and not re.search(r'\d{3}', s):
             if g is None: g=newgroup()
-            g['frags'].append(s)
+            g['frags'].append(scrub(s))
     if g and g['rows']: groups.append(g)
     for gr in groups:
         failures.append(dict(variant=b['variant'], system=b['system'], rcc=b['rcc'],

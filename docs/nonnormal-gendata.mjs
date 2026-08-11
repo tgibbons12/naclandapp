@@ -9,11 +9,22 @@ console.log('reference weights (klb):',BASE);
 console.log('blocks disagreeing with variant majority:',odd.length);
 const VKEY={'A319 (CFM)':'a319-cfm','A319 (IAE)':'a319-iae','A320 (CFM)':'a320-cfm',
  'A320 (IAE)':'a320-iae','A321 (CFM-56)':'a321-cfm','A321 (IAE)':'a321-iae','A321 (LEAP-1A)':'a321-leap'};
+// The "≤" glyph does not survive text extraction, so "1 ≤ FLAPS < 2" arrives as
+// "1  FLAPS < 2". Restore it where the shape is unambiguous — a bare number
+// immediately before FLAPS/SLATS, or immediately after one.
+function normaliseName(n){
+  // NOTE: restoring the lost "≤" glyph was attempted here and removed. The shape
+  // is genuinely ambiguous — "FLAPS > 3  SLATS < 1" must not become
+  // "FLAPS > 3 ≤ SLATS < 1". It needs the column geometry, not a regex.
+  return n.replace(/\s{2,}/g, " ").trim();
+}
+
 const data={}, meta={}; let cells=0;
 for(const x of F){
   if(!x.failure.trim()) continue;
   const v=VKEY[x.variant]; if(!v) continue;
-  const d=(((data[v] ??= {})[x.system] ??= {})[x.failure] ??= {});
+  const name=normaliseName(x.failure);
+  const d=(((data[v] ??= {})[x.system] ??= {})[name] ??= {});
   const r=(d[x.rcc] ??= {});
   for(const row of x.rows){
     r[row.flap]= row.noGo ? 'NOGO'
